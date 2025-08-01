@@ -103,16 +103,18 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        console.log('JWT callback - token actualizado:', { email: user.email, role: (user as any).role });
+        // Cambiar de (user as any).role a:
+        token.role = (user as { role?: string }).role;
+        console.log('JWT callback - token actualizado:', { email: user.email, role: (user as { role?: string }).role });
       }
       return token;
     },
     async session({ session, token }) {
       if (token && session.user) {
-        (session.user as any).id = token.sub!;
-        (session.user as any).role = token.role as string;
-        console.log('Session callback - sesión actualizada:', { email: session.user.email, role: (session.user as any).role });
+        // Cambiar de (session.user as any) a:
+        (session.user as { id?: string }).id = token.sub!;
+        (session.user as { role?: string }).role = token.role as string;
+        console.log('Session callback - sesión actualizada:', { email: session.user.email, role: (session.user as { role?: string }).role });
       }
       return session;
     },
