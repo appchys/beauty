@@ -1,0 +1,34 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Reglas para usuarios (admins y clientes)
+    match /users/{userId} {
+      allow read, write: if true; // Permitir todo para desarrollo
+    }
+    
+    // Reglas para negocios
+    match /businesses/{businessId} {
+      allow read, write: if true; // Permitir todo para desarrollo
+    }
+    
+    // Reglas para tarjetas de lealtad
+    match /loyaltyCards/{cardId} {
+      allow read, write: if true; // Permitir todo para desarrollo
+    }
+    
+    // Reglas para tarjetas de cliente
+    match /clientCards/{clientCardId} {
+      allow read, write: if true; // Permitir todo para desarrollo
+    }
+    
+    // Reglas para códigos QR
+    match /qrCodes/{qrCodeId} {
+      allow read, write: if true; // Permitir todo para desarrollo
+    }
+    
+    // Reglas para escaneos
+    match /stickerScans/{scanId} {
+      allow read, write: if true; // Permitir todo para desarrollo
+    }
+  }
+}
