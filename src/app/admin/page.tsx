@@ -4,11 +4,12 @@ import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Plus, Users, TrendingUp, Star, Download } from 'lucide-react';
-import { LoyaltyCard } from '@/types';
+import { LoyaltyCard, QRCode as QRCodeType } from '@/types';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const [cards, setCards] = useState<LoyaltyCard[]>([]);
+  const [qrCodes, setQRCodes] = useState<QRCodeType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateCard, setShowCreateCard] = useState(false);
   const [showCreateQR, setShowCreateQR] = useState(false);
@@ -39,6 +40,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         const data = await response.json();
         setCards(data.cards);
+        setQRCodes(data.qrCodes || []);
       }
     } catch (error) {
       console.error('Error fetching cards:', error);
@@ -68,6 +70,8 @@ export default function AdminDashboard() {
           qrCodeImage: data.qrCodeImage,
           scanUrl: data.scanUrl,
         });
+        // Refrescar la lista de QR codes
+        fetchCards();
       }
     } catch (error) {
       console.error('Error generating QR:', error);
@@ -162,8 +166,8 @@ export default function AdminDashboard() {
                 <Users className="h-6 w-6 text-green-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Clientes Activos</p>
+                <p className="text-2xl font-bold text-gray-900">{qrCodes.filter(qr => qr.isUsed).length}</p>
+                <p className="text-gray-600">QR Usados</p>
               </div>
             </CardContent>
           </Card>
@@ -174,7 +178,7 @@ export default function AdminDashboard() {
                 <QrCode className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">0</p>
+                <p className="text-2xl font-bold text-gray-900">{qrCodes.length}</p>
                 <p className="text-gray-600">QR Generados</p>
               </div>
             </CardContent>
@@ -186,8 +190,8 @@ export default function AdminDashboard() {
                 <TrendingUp className="h-6 w-6 text-orange-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-gray-900">0</p>
-                <p className="text-gray-600">Escaneos Hoy</p>
+                <p className="text-2xl font-bold text-gray-900">{qrCodes.filter(qr => !qr.isUsed).length}</p>
+                <p className="text-gray-600">QR Disponibles</p>
               </div>
             </CardContent>
           </Card>
@@ -413,6 +417,59 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* QR Codes Generated */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle>Códigos QR Generados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {qrCodes.length === 0 ? (
+              <div className="text-center py-8">
+                <QrCode className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay códigos QR generados</h3>
+                <p className="text-gray-600">Genera tu primer código QR para comenzar</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {qrCodes.map((qr) => {
+                  const card = cards.find(c => c.id === qr.cardId);
+                  return (
+                    <div key={qr.id} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-gray-900 text-sm">
+                          {card?.name || 'Tarjeta no encontrada'}
+                        </h3>
+                        <span className={`text-xs px-2 py-1 rounded ${
+                          qr.isUsed ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                          {qr.isUsed ? 'Usado' : 'Disponible'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-gray-600 space-y-1">
+                        <p><strong>Código:</strong> {qr.code}</p>
+                        <p><strong>Creado:</strong> {new Date(qr.createdAt).toLocaleDateString()}</p>
+                        <p><strong>Expira:</strong> {qr.expiresAt ? new Date(qr.expiresAt).toLocaleDateString() : 'No expira'}</p>
+                        {qr.usedAt && (
+                          <p><strong>Usado:</strong> {new Date(qr.usedAt).toLocaleDateString()}</p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(`${window.location.origin}/scan/${qr.code}`);
+                          alert('URL copiada al portapapeles');
+                        }}
+                        className="mt-2 w-full bg-blue-600 text-white py-1 px-2 rounded text-xs hover:bg-blue-700 transition-colors"
+                      >
+                        Copiar URL
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
             )}
           </CardContent>

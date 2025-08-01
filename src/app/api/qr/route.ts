@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
-import { createUniqueQRCode, getLoyaltyCardsByBusinessId, getBusinessByAdminId } from '@/lib/firestore';
+import { authOptions } from '@/lib/auth';
+import { createUniqueQRCode, getLoyaltyCardsByBusinessId, getBusinessByAdminId, getQRCodesByBusinessId } from '@/lib/firestore';
 import QRCode from 'qrcode';
 
 export async function POST(request: NextRequest) {
@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -67,8 +67,11 @@ export async function GET(request: NextRequest) {
 
     // Obtener las tarjetas del negocio
     const cards = await getLoyaltyCardsByBusinessId(business.id);
+    
+    // Obtener los códigos QR generados
+    const qrCodes = await getQRCodesByBusinessId(business.id);
 
-    return NextResponse.json({ cards });
+    return NextResponse.json({ cards, qrCodes });
   } catch (error) {
     console.error('Error fetching cards:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

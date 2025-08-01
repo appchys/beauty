@@ -3,6 +3,7 @@ export interface User {
   email: string;
   name: string;
   role: 'admin' | 'client';
+  password?: string; // Hacer password opcional
   businessId?: string; // Solo para admins
   phone?: string;
   createdAt: Date;

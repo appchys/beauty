@@ -1,19 +1,4 @@
 {
-  "indexes": [
-    {
-      "collectionGroup": "qr_codes",
-      "queryScope": "COLLECTION",
-      "fields": [
-        {
-          "fieldPath": "adminId",
-          "order": "ASCENDING"
-        },
-        {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
-        }
-      ]
-    }
-  ],
+  "indexes": [],
   "fieldOverrides": []
 }

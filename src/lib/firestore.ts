@@ -238,6 +238,25 @@ export async function getQRCodeByCode(code: string): Promise<QRCode | null> {
   } as QRCode;
 }
 
+export async function getQRCodesByBusinessId(businessId: string): Promise<QRCode[]> {
+  const q = query(collection(db, 'qrCodes'), where('businessId', '==', businessId));
+  const querySnapshot = await getDocs(q);
+  
+  const qrCodes = querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: data.createdAt.toDate(),
+      expiresAt: data.expiresAt.toDate(),
+      usedAt: data.usedAt?.toDate(),
+    } as QRCode;
+  });
+  
+  // Ordenar en el cliente por ahora
+  return qrCodes.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+}
+
 export async function assignQRCodeToClient(qrCodeId: string, clientId: string): Promise<void> {
   await updateDoc(doc(db, 'qrCodes', qrCodeId), {
     clientId,
