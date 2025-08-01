@@ -1,17 +1,24 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { getClientProgress } from '@/lib/firestore';
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'client') {
+    // Tipar session.user correctamente
+    if (!session || !(session.user as { role?: string }).role || (session.user as { role?: string }).role !== 'client') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const progress = await getClientProgress(session.user.id);
+    // Obtener el id del usuario de manera tipada
+    const userId = (session.user as { id?: string }).id;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
+    const progress = await getClientProgress(userId);
 
     return NextResponse.json({ progress });
   } catch (error) {

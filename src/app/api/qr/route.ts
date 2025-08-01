@@ -8,7 +8,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'admin') {
+    // Tipar session.user correctamente
+    if (!session || !(session.user as { role?: string }).role || (session.user as { role?: string }).role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -18,8 +19,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Card ID is required' }, { status: 400 });
     }
 
-    // Obtener el negocio del admin
-    const business = await getBusinessByAdminId(session.user.id);
+    // Obtener el negocio del admin usando el id tipado
+    const userId = (session.user as { id?: string }).id;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
+    const business = await getBusinessByAdminId(userId);
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }
@@ -55,12 +61,18 @@ export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'admin') {
+    // Tipar session.user correctamente
+    if (!session || !(session.user as { role?: string }).role || (session.user as { role?: string }).role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Obtener el negocio del admin
-    const business = await getBusinessByAdminId(session.user.id);
+    // Obtener el negocio del admin usando el id tipado
+    const userId = (session.user as { id?: string }).id;
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
+    const business = await getBusinessByAdminId(userId);
     if (!business) {
       return NextResponse.json({ error: 'Business not found' }, { status: 404 });
     }

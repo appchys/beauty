@@ -7,7 +7,8 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
     
-    if (!session || session.user.role !== 'admin') {
+    // Tipar session.user correctamente
+    if (!session || !(session.user as { role?: string }).role || (session.user as { role?: string }).role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -19,15 +20,26 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
+    // Obtener el id del usuario de manera tipada
+    const userId = (session.user as { id?: string }).id;
+    const userName = (session.user as { name?: string }).name;
+    
+    if (!userId) {
+      return NextResponse.json({ error: 'User ID not found' }, { status: 401 });
+    }
+
     // Obtener o crear el negocio del admin
-    let business = await getBusinessByAdminId(session.user.id);
+    let business = await getBusinessByAdminId(userId);
     
     if (!business) {
       // Crear negocio automáticamente
       business = await createBusiness({
-        name: `Negocio de ${session.user.name}`,
-        adminId: session.user.id,
+        name: `Negocio de ${userName || 'Admin'}`,
+        adminId: userId,
         description: 'Centro estético',
+        address: '',
+        phone: '',
+        email: session.user.email || '',
       });
     }
 
