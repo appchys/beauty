@@ -3,9 +3,7 @@ import {
   doc, 
   getDoc, 
   setDoc, 
-  addDoc, 
   updateDoc, 
-  deleteDoc, 
   query, 
   where, 
   getDocs, 
@@ -197,7 +195,7 @@ export async function createUniqueQRCode(businessId: string, cardId: string, cli
   };
   
   // Preparar datos para Firestore, eliminando campos undefined
-  const firestoreData: any = {
+  const firestoreData: Record<string, unknown> = {
     id: qrCode.id,
     businessId: qrCode.businessId,
     cardId: qrCode.cardId,
@@ -427,7 +425,7 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
   
   // Obtener todas las tarjetas de cliente para estas tarjetas
   const cardIds = cards.map(card => card.id);
-  const clientCards: any[] = [];
+  const clientCards: Array<Record<string, unknown>> = [];
   
   if (cardIds.length > 0) {
     // Firestore no soporta arrays muy grandes en 'in', así que hacemos consultas por lotes
