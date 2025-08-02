@@ -3,10 +3,17 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import { Star, CheckCircle, AlertCircle, Clock, QrCode } from 'lucide-react';
 import { QRCode } from '@/types';
 
 interface ClientData {
+  name: string;
+  email: string;
+  phone?: string;
+}
+
+interface StoredClient {
+  id: string;
   name: string;
   email: string;
   phone?: string;
@@ -19,6 +26,7 @@ export default function ScanPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
+  const [storedClient, setStoredClient] = useState<StoredClient | null>(null);
   const [clientData, setClientData] = useState<ClientData>({
     name: '',
     email: '',
@@ -33,6 +41,25 @@ export default function ScanPage() {
     };
   } | null>(null);
 
+  // Verificar si hay un cliente guardado en localStorage
+  useEffect(() => {
+    const savedClient = localStorage.getItem('beautyClient');
+    if (savedClient) {
+      try {
+        const client = JSON.parse(savedClient);
+        setStoredClient(client);
+        setClientData({
+          name: client.name,
+          email: client.email,
+          phone: client.phone || ''
+        });
+      } catch (error) {
+        console.error('Error parsing stored client:', error);
+        localStorage.removeItem('beautyClient');
+      }
+    }
+  }, []);
+
   // Definir validateQRCode ANTES del useEffect
   const validateQRCode = useCallback(async () => {
     try {
@@ -41,7 +68,15 @@ export default function ScanPage() {
 
       if (response.ok) {
         setQrData(data.qrCode);
-        setShowRegistration(data.requiresRegistration);
+        // Si hay cliente guardado y no requiere registro, procesarlo automáticamente
+        if (storedClient && !data.requiresRegistration) {
+          await processAutomatically();
+        } else if (storedClient && data.requiresRegistration) {
+          // Cliente guardado pero QR requiere asignación
+          await processWithStoredClient();
+        } else {
+          setShowRegistration(data.requiresRegistration);
+        }
       } else {
         setError(data.error);
       }
@@ -50,16 +85,12 @@ export default function ScanPage() {
     } finally {
       setLoading(false);
     }
-  }, [params.code]);
+  }, [params.code, storedClient]);
 
-  // Ahora useEffect puede usar validateQRCode sin problemas
-  useEffect(() => {
-    if (params.code) {
-      validateQRCode();
-    }
-  }, [params.code, validateQRCode]);
-
-  const handleScan = async () => {
+  // Procesar automáticamente con cliente guardado
+  const processAutomatically = async () => {
+    if (!storedClient) return;
+    
     setProcessing(true);
     try {
       const response = await fetch(`/api/scan/${params.code}`, {
@@ -67,7 +98,14 @@ export default function ScanPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ clientData: showRegistration ? clientData : undefined }),
+        body: JSON.stringify({
+          clientData: {
+            email: storedClient.email,
+            name: storedClient.name,
+            phone: storedClient.phone,
+            clientId: storedClient.id
+          }
+        }),
       });
 
       const data = await response.json();
@@ -75,7 +113,7 @@ export default function ScanPage() {
       if (response.ok) {
         setSuccess({
           message: data.message,
-          clientCard: data.clientCard
+          clientCard: data.clientCard,
         });
       } else {
         setError(data.error);
@@ -85,6 +123,109 @@ export default function ScanPage() {
     } finally {
       setProcessing(false);
     }
+  };
+
+  // Procesar con cliente guardado para QR que requiere asignación
+  const processWithStoredClient = async () => {
+    if (!storedClient) return;
+    
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/scan/${params.code}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientData: {
+            email: storedClient.email,
+            name: storedClient.name,
+            phone: storedClient.phone
+          }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setSuccess({
+          message: data.message,
+          clientCard: data.clientCard,
+        });
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      setError('Error al procesar el escaneo');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Ahora useEffect puede usar validateQRCode sin problemas
+  useEffect(() => {
+    if (params.code) {
+      validateQRCode();
+    }
+  }, [params.code, validateQRCode]);
+
+  const handleScan = async () => {
+    if (!clientData.name || !clientData.email) {
+      setError('Nombre y email son requeridos');
+      return;
+    }
+
+    setProcessing(true);
+    setError(null);
+
+    try {
+      const response = await fetch(`/api/scan/${params.code}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clientData: {
+            email: clientData.email,
+            name: clientData.name,
+            phone: clientData.phone,
+          }
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Guardar cliente en localStorage para futuros escaneos
+        const clientToSave = {
+          id: data.clientId || Date.now().toString(),
+          name: clientData.name,
+          email: clientData.email,
+          phone: clientData.phone
+        };
+        localStorage.setItem('beautyClient', JSON.stringify(clientToSave));
+        
+        setSuccess({
+          message: data.message,
+          clientCard: data.clientCard,
+        });
+        setShowRegistration(false);
+      } else {
+        setError(data.error);
+      }
+    } catch (error) {
+      setError('Error al procesar el registro');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  // Función para cerrar sesión del cliente
+  const handleLogout = () => {
+    localStorage.removeItem('beautyClient');
+    setStoredClient(null);
+    setClientData({ name: '', email: '', phone: '' });
+    window.location.reload();
   };
 
   if (loading) {
@@ -141,6 +282,20 @@ export default function ScanPage() {
               </div>
             )}
 
+            {storedClient && (
+              <div className="bg-blue-50 p-3 rounded-lg mb-4">
+                <p className="text-sm text-blue-800">
+                  Sesión iniciada como: <strong>{storedClient.name}</strong>
+                </p>
+                <button
+                  onClick={handleLogout}
+                  className="mt-2 text-sm text-blue-600 hover:text-blue-800 underline"
+                >
+                  Cambiar usuario
+                </button>
+              </div>
+            )}
+
             <div className="space-y-3">
               <button
                 onClick={() => router.push('/client')}
@@ -167,12 +322,26 @@ export default function ScanPage() {
         <CardHeader>
           <CardTitle className="text-center flex items-center justify-center space-x-2">
             <Star className="h-6 w-6 text-purple-600" />
-            <span>Ganar Sticker</span>
+            <span>{storedClient ? `¡Hola ${storedClient.name}!` : 'Ganar Sticker'}</span>
           </CardTitle>
         </CardHeader>
         
         <CardContent className="space-y-6">
-          {showRegistration ? (
+          {storedClient && !showRegistration ? (
+            <div className="space-y-4">
+              <div className="bg-green-50 p-3 rounded-lg">
+                <p className="text-sm text-green-800">
+                  Procesando automáticamente con tu cuenta...
+                </p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full bg-gray-500 text-white py-2 px-4 rounded-lg hover:bg-gray-600"
+              >
+                Usar otra cuenta
+              </button>
+            </div>
+          ) : showRegistration ? (
             <>
               <div className="text-center">
                 <p className="text-gray-600 mb-4">
@@ -240,23 +409,26 @@ export default function ScanPage() {
             </div>
           )}
 
-          <button
-            onClick={handleScan}
-            disabled={processing || (showRegistration && (!clientData.name || !clientData.email))}
-            className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            {processing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Procesando...</span>
-              </>
-            ) : (
-              <>
-                <Star className="h-5 w-5" />
-                <span>Obtener Sticker</span>
-              </>
-            )}
-          </button>
+          {/* Solo mostrar el botón si no hay cliente guardado o si necesita registro */}
+          {(!storedClient || showRegistration) && (
+            <button
+              onClick={handleScan}
+              disabled={processing || (showRegistration && (!clientData.name || !clientData.email))}
+              className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            >
+              {processing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Procesando...</span>
+                </>
+              ) : (
+                <>
+                  <Star className="h-5 w-5" />
+                  <span>{showRegistration ? 'Registrar y Obtener Sticker' : 'Obtener Sticker'}</span>
+                </>
+              )}
+            </button>
+          )}
 
           <p className="text-xs text-gray-500 text-center">
             Al continuar, aceptas formar parte del programa de fidelidad.

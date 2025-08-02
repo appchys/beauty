@@ -67,30 +67,41 @@ export async function POST(
         }, { status: 400 });
       }
 
-      // Buscar cliente existente
-      let client = await getUserByEmail(clientData.email);
-      
-      if (!client) {
-        // Crear cliente en Firestore
-        client = await createUser({
-          email: clientData.email,
-          name: clientData.name,
-          role: 'client',
-          phone: clientData.phone,
-        });
-      }
+      // Si viene un clientId en clientData, usarlo directamente (cliente con sesión guardada)
+      if (clientData.clientId) {
+        clientId = clientData.clientId;
+      } else {
+        // Buscar cliente existente
+        let client = await getUserByEmail(clientData.email);
+        
+        if (!client) {
+          // Crear cliente en Firestore
+          client = await createUser({
+            email: clientData.email,
+            name: clientData.name,
+            role: 'client',
+            phone: clientData.phone,
+          });
+        }
 
-      clientId = client.id;
+        clientId = client.id;
+      }
       
       // Asignar el QR al cliente
-      await assignQRCodeToClient(qrCode.id, clientId);
+      await assignQRCodeToClient(qrCode.id, clientId as string);
+    }
+
+    // Validar que tenemos un clientId válido
+    if (!clientId) {
+      return NextResponse.json({ error: 'No se pudo obtener el ID del cliente' }, { status: 500 });
     }
 
     // Agregar sticker a la tarjeta del cliente
-    const updatedCard = await addStickerToClientCard(clientId, qrCode.cardId, qrCode.id);
+    const updatedCard = await addStickerToClientCard(clientId as string, qrCode.cardId, qrCode.id);
 
     return NextResponse.json({
       success: true,
+      clientId,
       clientCard: updatedCard,
       message: updatedCard.isCompleted 
         ? '¡Felicidades! Has completado tu tarjeta de fidelidad.' 
