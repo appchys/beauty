@@ -4,16 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-
-interface QRCodeData {
-  id: string;
-  businessId: string;
-  cardId: string;
-  clientId?: string;
-  code: string;
-  isUsed: boolean;
-  expiresAt?: string;
-}
+import { QRCode } from '@/types';
 
 interface ClientData {
   name: string;
@@ -24,7 +15,7 @@ interface ClientData {
 export default function ScanPage() {
   const params = useParams();
   const router = useRouter();
-  const [qrCode, setQrCode] = useState<QRCodeData | null>(null);
+  const [qrData, setQrData] = useState<QRCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
@@ -51,7 +42,7 @@ export default function ScanPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setQrCode(data.qrCode);
+        setQrData(data.qrCode);
         setShowRegistration(data.requiresRegistration);
       } else {
         setError(data.error);
@@ -235,11 +226,11 @@ export default function ScanPage() {
             </div>
           )}
 
-          {qrCode?.expiresAt && (
+          {qrData?.expiresAt && (
             <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
               <Clock className="h-4 w-4" />
               <span>
-                Expira: {new Date(qrCode.expiresAt).toLocaleDateString()}
+                Expira: {new Date(qrData.expiresAt).toLocaleDateString()}
               </span>
             </div>
           )}

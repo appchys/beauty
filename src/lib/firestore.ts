@@ -320,7 +320,12 @@ export async function addStickerToClientCard(clientId: string, cardId: string, q
   const now = new Date();
   
   // Actualizar la tarjeta del cliente
-  const updateData: any = {
+  const updateData: {
+    currentStickers: number;
+    isCompleted: boolean;
+    updatedAt: Timestamp;
+    completedAt?: Timestamp;
+  } = {
     currentStickers: newStickerCount,
     isCompleted,
     updatedAt: Timestamp.fromDate(now),
