@@ -37,7 +37,7 @@ export default function ScanPage() {
     if (params.code) {
       validateQRCode();
     }
-  }, [params.code]);
+  }, [params.code, validateQRCode]); // Agregar validateQRCode a las dependencias
 
   const validateQRCode = useCallback(async () => {
     try {
