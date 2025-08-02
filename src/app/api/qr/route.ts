@@ -34,7 +34,11 @@ export async function POST(request: NextRequest) {
     const qrCodeData = await createUniqueQRCode(business.id, cardId, clientEmail);
     
     // Generar la URL de escaneo
-    const scanUrl = `${process.env.NEXT_PUBLIC_APP_URL}/scan/${qrCodeData.code}`;
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+               (process.env.NODE_ENV === 'production' 
+                 ? 'https://beauty-pearl.vercel.app' 
+                 : 'http://localhost:3000');
+    const scanUrl = `${baseUrl}/scan/${qrCodeData.code}`;
     
     // Generar imagen QR
     const qrCodeImage = await QRCode.toDataURL(scanUrl, {
