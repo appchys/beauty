@@ -3,10 +3,11 @@ import { getQRCodeByCode, addStickerToClientCard, getUserByEmail, createUser, as
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const { code } = params;
+    // Await params since they're a Promise in Next.js 15
+    const { code } = await params;
 
     const qrCode = await getQRCodeByCode(code);
     
@@ -34,10 +35,11 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   try {
-    const { code } = params;
+    // Await params since they're a Promise in Next.js 15
+    const { code } = await params;
     const { clientData } = await request.json();
 
     const qrCode = await getQRCodeByCode(code);

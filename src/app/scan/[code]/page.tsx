@@ -33,12 +33,7 @@ export default function ScanPage() {
     };
   } | null>(null);
 
-  useEffect(() => {
-    if (params.code) {
-      validateQRCode();
-    }
-  }, [params.code]);
-
+  // Definir validateQRCode ANTES del useEffect
   const validateQRCode = useCallback(async () => {
     try {
       const response = await fetch(`/api/scan/${params.code}`);
@@ -56,6 +51,13 @@ export default function ScanPage() {
       setLoading(false);
     }
   }, [params.code]);
+
+  // Ahora useEffect puede usar validateQRCode sin problemas
+  useEffect(() => {
+    if (params.code) {
+      validateQRCode();
+    }
+  }, [params.code, validateQRCode]);
 
   const handleScan = async () => {
     setProcessing(true);
