@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, CheckCircle, AlertCircle, Clock } from 'lucide-react';
@@ -27,7 +27,10 @@ export default function ScanPage() {
   const [processing, setProcessing] = useState(false);
   const [success, setSuccess] = useState<{
     message: string;
-    clientCard?: any;
+    clientCard?: {
+      currentStickers: number;
+      isCompleted: boolean;
+    };
   } | null>(null);
 
   useEffect(() => {
@@ -36,7 +39,7 @@ export default function ScanPage() {
     }
   }, [params.code]);
 
-  const validateQRCode = async () => {
+  const validateQRCode = useCallback(async () => {
     try {
       const response = await fetch(`/api/scan/${params.code}`);
       const data = await response.json();
@@ -52,7 +55,7 @@ export default function ScanPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.code]);
 
   const handleScan = async () => {
     setProcessing(true);
