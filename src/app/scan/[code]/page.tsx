@@ -298,7 +298,15 @@ export default function ScanPage() {
 
             <div className="space-y-3">
               <button
-                onClick={() => router.push('/client')}
+                onClick={() => {
+                  // Verificar si hay cliente guardado para navegar apropiadamente
+                  if (storedClient) {
+                    router.push(`/client/${storedClient.id}`);
+                  } else {
+                    // Si no hay cliente guardado, usar el ID del clientCard o navegar al dashboard
+                    router.push('/client/dashboard');
+                  }
+                }}
                 className="w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
               >
                 Ver mis tarjetas
