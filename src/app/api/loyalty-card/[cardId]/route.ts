@@ -3,10 +3,10 @@ import { getLoyaltyCardById } from '@/lib/firestore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { cardId: string } }
+  { params }: { params: Promise<{ cardId: string }> }
 ) {
   try {
-    const { cardId } = params;
+    const { cardId } = await params;
     const card = await getLoyaltyCardById(cardId);
     if (!card) {
       return NextResponse.json({ error: 'Loyalty card not found' }, { status: 404 });
