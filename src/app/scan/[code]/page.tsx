@@ -3,8 +3,24 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, CheckCircle, AlertCircle, Clock, QrCode } from 'lucide-react';
-import { QRCode } from '@/types';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Star, CheckCircle, AlertCircle, Clock, QrCode, Trophy } from 'lucide-react';
+import { QRCode as QRCodeBase, LoyaltyCard } from '@/types';
+
+// Extiende QRCode para frontend con requiredStickers opcional
+type QRCode = QRCodeBase & { requiredStickers?: number };
+// Helper to fetch LoyaltyCard by ID
+async function fetchLoyaltyCard(cardId: string): Promise<LoyaltyCard | null> {
+  try {
+    const res = await fetch(`/api/loyalty-card/${cardId}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.card as LoyaltyCard;
+  } catch {
+    return null;
+  }
+}
 
 interface ClientData {
   name: string;
@@ -38,6 +54,7 @@ export default function ScanPage() {
     clientCard?: {
       currentStickers: number;
       isCompleted: boolean;
+      requiredStickers?: number;
     };
   } | null>(null);
 
@@ -68,6 +85,11 @@ export default function ScanPage() {
 
       if (response.ok) {
         setQrData(data.qrCode);
+        // Pre-fetch loyalty card info for requiredStickers
+        if (data.qrCode && data.qrCode.cardId) {
+          const loyaltyCard = await fetchLoyaltyCard(data.qrCode.cardId);
+          setQrData(prev => prev ? { ...prev, requiredStickers: loyaltyCard?.requiredStickers } : prev);
+        }
         // Si hay cliente guardado y no requiere registro, procesarlo automáticamente
         if (storedClient && !data.requiresRegistration) {
           await processAutomatically();
@@ -113,7 +135,10 @@ export default function ScanPage() {
       if (response.ok) {
         setSuccess({
           message: data.message,
-          clientCard: data.clientCard,
+          clientCard: {
+            ...data.clientCard,
+            requiredStickers: qrData && qrData.requiredStickers ? qrData.requiredStickers : 10,
+          },
         });
       } else {
         setError(data.error);
@@ -150,7 +175,10 @@ export default function ScanPage() {
       if (response.ok) {
         setSuccess({
           message: data.message,
-          clientCard: data.clientCard,
+          clientCard: {
+            ...data.clientCard,
+            requiredStickers: qrData && qrData.requiredStickers ? qrData.requiredStickers : 10,
+          },
         });
       } else {
         setError(data.error);
@@ -204,10 +232,12 @@ export default function ScanPage() {
           phone: clientData.phone
         };
         localStorage.setItem('beautyClient', JSON.stringify(clientToSave));
-        
         setSuccess({
           message: data.message,
-          clientCard: data.clientCard,
+          clientCard: {
+            ...data.clientCard,
+            requiredStickers: qrData && qrData.requiredStickers ? qrData.requiredStickers : 10,
+          },
         });
         setShowRegistration(false);
       } else {
@@ -260,28 +290,56 @@ export default function ScanPage() {
   }
 
   if (success) {
+    // Simular una "tarjeta" visual como en el dashboard
+    const card = success.clientCard;
+    // Fallback: usa requiredStickers de clientCard, si no, 10
+    const requiredStickers = card && typeof card.requiredStickers === 'number' ? card.requiredStickers : 10;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
         <Card className="w-full max-w-md">
-          <CardContent className="text-center py-8">
-            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-gray-900 mb-2">¡Éxito!</h2>
-            <p className="text-gray-600 mb-6">{success.message}</p>
-            
-            {success.clientCard && (
-              <div className="bg-purple-50 p-4 rounded-lg mb-6">
-                <div className="flex items-center justify-center space-x-2 mb-2">
-                  <Star className="h-5 w-5 text-purple-600" />
-                  <span className="font-semibold">
-                    {success.clientCard.currentStickers} stickers
-                  </span>
+          <CardHeader className="pb-3 text-center">
+            <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-2" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">¡Sticker agregado!</h2>
+            <p className="text-gray-600 mb-2">{success.message}</p>
+          </CardHeader>
+          <CardContent>
+            {card && (
+              <div className="space-y-4 mb-6">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="font-semibold text-lg">Progreso de tu tarjeta</span>
+                  {card.isCompleted ? (
+                    <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-4 w-4 mr-1" />Completada</Badge>
+                  ) : (
+                    <Badge variant="outline">{card.currentStickers} stickers</Badge>
+                  )}
                 </div>
-                {success.clientCard.isCompleted && (
-                  <p className="text-green-600 font-semibold">¡Tarjeta completa! 🎉</p>
+                {/* Barra de progreso visual */}
+                <div>
+                  <div className="flex justify-between text-sm text-gray-600 mb-2">
+                    <span>Progreso</span>
+                    <span>{card.currentStickers} stickers</span>
+                  </div>
+                  <Progress value={card.isCompleted ? 100 : (card.currentStickers / requiredStickers) * 100} className="h-2" />
+                </div>
+                {/* Stickers visuales */}
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: requiredStickers }).map((_, idx) => (
+                    <div
+                      key={idx}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${idx < card.currentStickers ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-400'}`}
+                    >
+                      <Star className="h-4 w-4" />
+                    </div>
+                  ))}
+                </div>
+                {/* Mensaje de recompensa si está completa */}
+                {card.isCompleted && (
+                  <div className="bg-green-50 p-3 rounded-lg text-green-800 font-semibold flex items-center justify-center">
+                    <Trophy className="h-5 w-5 mr-2" />¡Tarjeta completa! Reclama tu recompensa.
+                  </div>
                 )}
               </div>
             )}
-
             {storedClient && (
               <div className="bg-blue-50 p-3 rounded-lg mb-4">
                 <p className="text-sm text-blue-800">
@@ -295,18 +353,9 @@ export default function ScanPage() {
                 </button>
               </div>
             )}
-
             <div className="space-y-3">
               <button
-                onClick={() => {
-                  // Verificar si hay cliente guardado para navegar apropiadamente
-                  if (storedClient) {
-                    router.push(`/client/${storedClient.id}`);
-                  } else {
-                    // Si no hay cliente guardado, usar el ID del clientCard o navegar al dashboard
-                    router.push('/client/dashboard');
-                  }
-                }}
+                onClick={() => router.push('/client')}
                 className="w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
               >
                 Ver mis tarjetas

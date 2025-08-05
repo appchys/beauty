@@ -12,12 +12,26 @@ export default function ClientDashboard() {
   const { data: session, status } = useSession();
   const [progress, setProgress] = useState<ClientProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [localClient, setLocalClient] = useState<{ id: string; name: string } | null>(null);
+
+  // Detectar cliente localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('beautyClient');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setLocalClient({ id: parsed.id, name: parsed.name });
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     if (session?.user?.role === 'client') {
       fetchProgress();
+    } else if (localClient) {
+      fetchProgressLocal(localClient.id);
     }
-  }, [session]);
+  }, [session, localClient]);
 
   const fetchProgress = async () => {
     try {
@@ -28,6 +42,21 @@ export default function ClientDashboard() {
       }
     } catch (error) {
       console.error('Error fetching progress:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fetch progreso usando el id de localStorage (sin auth)
+  const fetchProgressLocal = async (clientId: string) => {
+    try {
+      const response = await fetch(`/api/client/progress?id=${clientId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setProgress(data.progress);
+      }
+    } catch (error) {
+      console.error('Error fetching progress (local):', error);
     } finally {
       setLoading(false);
     }
@@ -45,19 +74,23 @@ export default function ClientDashboard() {
   }
 
   if (!session || session.user.role !== 'client') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">Acceso no autorizado</h1>
-          <p className="text-gray-600">Necesitas ser un cliente para ver esta página.</p>
+    // Si hay cliente localStorage, mostrar dashboard con su nombre
+    if (!localClient) {
+      return (
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-gray-900 mb-4">Acceso no autorizado</h1>
+            <p className="text-gray-600">Necesitas ser un cliente para ver esta página.</p>
+          </div>
         </div>
-      </div>
-    );
+      );
+    }
   }
 
   const completedCards = progress.filter(p => p.isCompleted).length;
   const activeCards = progress.filter(p => !p.isCompleted).length;
   const totalStickers = progress.reduce((sum, p) => sum + p.currentStickers, 0);
+  const clientName = session?.user?.name || localClient?.name || 'Cliente';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
@@ -65,7 +98,7 @@ export default function ClientDashboard() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            ¡Hola, {session.user.name}! 👋
+            ¡Hola, {clientName}! 👋
           </h1>
           <p className="text-gray-600">Aquí puedes ver el progreso de todas tus tarjetas de fidelidad</p>
         </div>

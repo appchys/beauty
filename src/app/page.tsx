@@ -2,11 +2,23 @@
 
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { Star, Sparkles, QrCode, Users } from 'lucide-react';
 
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [localClient, setLocalClient] = useState<{ name: string } | null>(null);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('beautyClient');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setLocalClient({ name: parsed.name });
+      } catch {}
+    }
+  }, []);
 
   if (status === 'loading') {
     return (
@@ -19,7 +31,7 @@ export default function Home() {
   const handleNavigation = () => {
     if (session?.user?.role === 'admin') {
       router.push('/admin');
-    } else if (session?.user?.role === 'client') {
+    } else if (session?.user?.role === 'client' || localClient) {
       router.push('/client');
     }
   };
@@ -47,6 +59,25 @@ export default function Home() {
                   </button>
                   <button
                     onClick={() => signOut()}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </>
+              ) : localClient ? (
+                <>
+                  <span className="text-gray-700">Hola, {localClient.name}</span>
+                  <button
+                    onClick={handleNavigation}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                  >
+                    Mis Tarjetas
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('beautyClient');
+                      window.location.reload();
+                    }}
                     className="text-gray-600 hover:text-gray-800"
                   >
                     Cerrar Sesión
