@@ -15,6 +15,7 @@ export interface Business {
   name: string;
   description?: string;
   logo?: string;
+  logoUrl?: string; // URL de la imagen/logo
   address?: string;
   phone?: string;
   email?: string;
