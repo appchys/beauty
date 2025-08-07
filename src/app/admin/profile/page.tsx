@@ -2,13 +2,18 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Business } from '@/types';
 import { storage } from '@/lib/firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { useSession } from 'next-auth/react';
 import { auth } from '@/lib/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword,
+  AuthError
+} from 'firebase/auth';
 
 export default function AdminProfilePage() {
   const router = useRouter();
@@ -76,7 +81,8 @@ export default function AdminProfilePage() {
           session.user.email,
           'admin_dummy_password'
         );
-      } catch (err: any) {
+      } catch (error) {
+        const err = error as AuthError;
         try {
           // Si las credenciales son inválidas o el usuario no existe, intentamos crear uno nuevo
           if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
@@ -87,7 +93,8 @@ export default function AdminProfilePage() {
                 session.user.email,
                 'admin_dummy_password'
               );
-            } catch (createErr: any) {
+            } catch (error) {
+              const createErr = error as AuthError;
               if (createErr.code === 'auth/email-already-in-use') {
                 console.error('El usuario existe pero la contraseña es incorrecta');
                 setError('Error de autenticación. Por favor, contacte al administrador.');
@@ -225,11 +232,15 @@ export default function AdminProfilePage() {
                 >
                   {logoPreview ? (
                     <div className="relative group">
-                      <img
-                        src={logoPreview}
-                        alt="Logo del negocio"
-                        className="h-32 w-32 object-cover rounded-lg border-2 border-gray-200 shadow-sm"
-                      />
+                      <div className="h-32 w-32 relative">
+                        <Image
+                          src={logoPreview}
+                          alt="Logo del negocio"
+                          fill
+                          className="object-cover rounded-lg border-2 border-gray-200 shadow-sm"
+                          sizes="128px"
+                        />
+                      </div>
                       <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
                         <span className="text-white text-sm">Cambiar imagen</span>
                       </div>
