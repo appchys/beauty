@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Business } from '@/types';
@@ -13,6 +13,7 @@ import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'fire
 export default function AdminProfilePage() {
   const router = useRouter();
   const { data: session } = useSession();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +201,10 @@ export default function AdminProfilePage() {
     );
   }
 
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   return (
     <div className="p-4 max-w-2xl mx-auto">
       <Card>
@@ -214,29 +219,35 @@ export default function AdminProfilePage() {
                 Logo del negocio
               </label>
               <div className="flex flex-col items-center space-y-4">
-                {logoPreview ? (
-                  <div className="relative group">
-                    <img
-                      src={logoPreview}
-                      alt="Logo del negocio"
-                      className="h-32 w-32 object-cover rounded-lg border-2 border-gray-200 shadow-sm"
-                    />
-                    <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                      <span className="text-white text-sm">Cambiar imagen</span>
+                <div 
+                  onClick={triggerFileInput}
+                  className="cursor-pointer"
+                >
+                  {logoPreview ? (
+                    <div className="relative group">
+                      <img
+                        src={logoPreview}
+                        alt="Logo del negocio"
+                        className="h-32 w-32 object-cover rounded-lg border-2 border-gray-200 shadow-sm"
+                      />
+                      <div className="absolute inset-0 bg-black bg-opacity-50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <span className="text-white text-sm">Cambiar imagen</span>
+                      </div>
                     </div>
-                  </div>
-                ) : (
-                  <div className="h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50">
-                    <span className="text-gray-500 text-sm text-center px-4">
-                      Click para subir logo
-                    </span>
-                  </div>
-                )}
+                  ) : (
+                    <div className="h-32 w-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <span className="text-gray-500 text-sm text-center px-4">
+                        Click para subir logo
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <input
+                  ref={fileInputRef}
                   type="file"
                   accept="image/*"
                   onChange={handleLogoChange}
-                  className="block w-full text-sm text-gray-500"
+                  className="hidden"
                   aria-describedby="logo-help"
                 />
                 <p id="logo-help" className="text-xs text-gray-500">
