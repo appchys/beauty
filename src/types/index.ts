@@ -47,6 +47,18 @@ export interface ClientCard {
   updatedAt: Date;
 }
 
+export interface ClientProgress {
+  cardId: string;
+  cardName: string;
+  storeName: string;
+  storeLogo?: string;
+  currentStickers: number;
+  requiredStickers: number;
+  isCompleted: boolean;
+  rewardDescription: string;
+  completedAt?: Date;
+}
+
 export interface QRCode {
   id: string;
   businessId: string;
@@ -68,15 +80,6 @@ export interface StickerScan {
   scannedAt: Date;
 }
 
-export interface ClientProgress {
-  cardId: string;
-  cardName: string;
-  currentStickers: number;
-  requiredStickers: number;
-  isCompleted: boolean;
-  rewardDescription: string;
-  completedAt?: Date;
-}
 
 export interface DashboardStats {
   totalClients: number;

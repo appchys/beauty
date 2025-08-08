@@ -66,7 +66,7 @@ export default function ClientDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-pink-600"></div>
           <p className="mt-4 text-gray-600">Cargando tu progreso...</p>
         </div>
       </div>
@@ -93,7 +93,7 @@ export default function ClientDashboard() {
   const clientName = session?.user?.name || localClient?.name || 'Cliente';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-pink-100">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -131,8 +131,8 @@ export default function ClientDashboard() {
 
           <Card>
             <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                <Star className="h-6 w-6 text-purple-600" />
+              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mr-4">
+                <Star className="h-6 w-6 text-pink-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{totalStickers}</p>
@@ -157,17 +157,30 @@ export default function ClientDashboard() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {progress.map((card) => (
-                <Card key={card.cardId} className="overflow-hidden">
-                  <CardHeader className="pb-3">
+                <Card key={card.cardId} className="overflow-hidden relative bg-gradient-to-br from-pink-300 via-pink-50 to-pink-100 w-full aspect-[1.58] max-w-md mx-auto">
+                  <CardHeader className="p-6 pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{card.cardName}</CardTitle>
+                      <div className="flex items-center space-x-4">
+                        {/* Logo de la tienda */}
+                        <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden">
+                          <img
+                            src={card.storeLogo || '/store-default.png'}
+                            alt={`Logo de ${card.cardName}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-bold text-gray-800">{card.cardName}</CardTitle>
+                          <p className="text-sm text-gray-600">{card.storeName || 'Beauty Store'}</p>
+                        </div>
+                      </div>
                       {card.isCompleted ? (
                         <Badge className="bg-green-100 text-green-800">
                           <CheckCircle className="h-4 w-4 mr-1" />
                           Completada
                         </Badge>
                       ) : (
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="bg-white">
                           {card.currentStickers}/{card.requiredStickers}
                         </Badge>
                       )}
@@ -175,7 +188,7 @@ export default function ClientDashboard() {
                   </CardHeader>
                   
                   <CardContent>
-                    <div className="space-y-4">
+                    <div className="space-y-4 relative">
                       {/* Progress Bar */}
                       <div>
                         <div className="flex justify-between text-sm text-gray-600 mb-2">
@@ -195,19 +208,13 @@ export default function ClientDashboard() {
                             key={index}
                             className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                               index < card.currentStickers
-                                ? 'bg-purple-600 text-white'
+                                ? 'bg-pink-600 text-white'
                                 : 'bg-gray-200 text-gray-400'
                             }`}
                           >
                             <Star className="h-4 w-4" />
                           </div>
                         ))}
-                      </div>
-
-                      {/* Reward */}
-                      <div className="bg-purple-50 p-3 rounded-lg">
-                        <p className="text-sm font-medium text-purple-900 mb-1">Recompensa:</p>
-                        <p className="text-sm text-purple-700">{card.rewardDescription}</p>
                       </div>
 
                       {/* Completion Date */}

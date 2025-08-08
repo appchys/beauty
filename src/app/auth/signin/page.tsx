@@ -54,12 +54,12 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <div className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-purple-600 rounded-2xl flex items-center justify-center">
+            <div className="w-16 h-16 bg-pink-600 rounded-2xl flex items-center justify-center">
               <Sparkles className="h-8 w-8 text-white" />
             </div>
           </div>
@@ -88,7 +88,7 @@ export default function SignIn() {
                   <input
                     type="email"
                     required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     placeholder="tu@email.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -107,7 +107,7 @@ export default function SignIn() {
                     <input
                       type="text"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       placeholder="Tu nombre"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -123,7 +123,7 @@ export default function SignIn() {
                     Tipo de cuenta
                   </label>
                   <select
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'client' })}
                   >
@@ -143,7 +143,7 @@ export default function SignIn() {
                   <input
                     type="password"
                     required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                     placeholder="••••••••"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
@@ -162,7 +162,7 @@ export default function SignIn() {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="w-full bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition-colors"
               >
                 {isLoading ? 'Procesando...' : (isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión')}
               </button>
@@ -176,7 +176,7 @@ export default function SignIn() {
                   setIsSignUp(!isSignUp);
                   setError('');
                 }}
-                className="text-purple-600 hover:text-purple-700 text-sm font-medium"
+                className="text-pink-600 hover:text-pink-700 text-sm font-medium"
               >
                 {isSignUp 
                   ? '¿Ya tienes cuenta? Inicia sesión' 

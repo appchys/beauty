@@ -23,7 +23,7 @@ export default function Home() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-purple-600"></div>
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-pink-600"></div>
       </div>
     );
   }
@@ -37,13 +37,13 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-pink-50 to-blue-50">
       {/* Header */}
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-2">
-              <Sparkles className="h-8 w-8 text-purple-600" />
+              <Sparkles className="h-8 w-8 text-pink-600" />
               <h1 className="text-2xl font-bold text-gray-900">BeautyPoints</h1>
             </div>
             
@@ -53,7 +53,7 @@ export default function Home() {
                   <span className="text-gray-700">Hola, {session.user.name}</span>
                   <button
                     onClick={handleNavigation}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                    className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700"
                   >
                     {session.user.role === 'admin' ? 'Panel Admin' : 'Mis Tarjetas'}
                   </button>
@@ -69,7 +69,7 @@ export default function Home() {
                   <span className="text-gray-700">Hola, {localClient.name}</span>
                   <button
                     onClick={handleNavigation}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                    className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700"
                   >
                     Mis Tarjetas
                   </button>
@@ -87,13 +87,13 @@ export default function Home() {
                 <>
                   <button
                     onClick={() => router.push('/auth/signin')}
-                    className="text-purple-600 hover:text-purple-800"
+                    className="text-pink-600 hover:text-pink-800"
                   >
                     Iniciar Sesión
                   </button>
                   <button
                     onClick={() => router.push('/auth/register')}
-                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                    className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700"
                   >
                     Registrarse
                   </button>
@@ -120,13 +120,13 @@ export default function Home() {
             <div className="space-x-4">
               <button
                 onClick={() => router.push('/auth/register')}
-                className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 text-lg"
+                className="bg-pink-600 text-white px-8 py-3 rounded-lg hover:bg-pink-700 text-lg"
               >
                 Comenzar Gratis
               </button>
               <button
                 onClick={() => router.push('/demo')}
-                className="border border-purple-600 text-purple-600 px-8 py-3 rounded-lg hover:bg-purple-50 text-lg"
+                className="border border-pink-600 text-pink-600 px-8 py-3 rounded-lg hover:bg-pink-50 text-lg"
               >
                 Ver Demo
               </button>
@@ -137,8 +137,8 @@ export default function Home() {
         {/* Features */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           <div className="bg-white p-6 rounded-xl shadow-sm text-center">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <QrCode className="h-6 w-6 text-purple-600" />
+            <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mx-auto mb-4">
+              <QrCode className="h-6 w-6 text-pink-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">QR Únicos</h3>
             <p className="text-gray-600">Códigos QR únicos por cliente con expiración automática</p>
@@ -177,7 +177,7 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
+              <div className="w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
                 1
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Crear Tarjetas</h4>
@@ -185,7 +185,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
+              <div className="w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
                 2
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Generar QR Únicos</h4>
@@ -193,7 +193,7 @@ export default function Home() {
             </div>
 
             <div className="text-center">
-              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
+              <div className="w-16 h-16 bg-pink-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-xl font-bold">
                 3
               </div>
               <h4 className="text-lg font-semibold text-gray-900 mb-2">Escanear y Ganar</h4>

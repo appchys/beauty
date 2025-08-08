@@ -81,6 +81,22 @@ export async function getUserById(id: string): Promise<User | null> {
 }
 
 // Business functions
+export async function getBusinessById(id: string): Promise<Business | null> {
+  const businessDoc = await getDoc(doc(db, 'businesses', id));
+  
+  if (!businessDoc.exists()) {
+    return null;
+  }
+  
+  const data = businessDoc.data();
+  return {
+    ...data,
+    id: businessDoc.id,
+    createdAt: data.createdAt.toDate(),
+    updatedAt: data.updatedAt.toDate(),
+  } as Business;
+}
+
 export async function createBusiness(businessData: Omit<Business, 'id' | 'createdAt' | 'updatedAt'>): Promise<Business> {
   const businessId = uuidv4();
   const now = new Date();
@@ -379,12 +395,17 @@ export async function getClientProgress(clientId: string): Promise<ClientProgres
     const loyaltyCard = await getLoyaltyCardById(clientCardData.cardId);
     
     if (loyaltyCard) {
+      // Obtener información del negocio
+      const business = await getBusinessById(loyaltyCard.businessId);
+      
       progress.push({
         cardId: clientCardData.cardId,
         cardName: loyaltyCard.name,
         currentStickers: clientCardData.currentStickers,
         requiredStickers: loyaltyCard.requiredStickers,
         isCompleted: clientCardData.isCompleted,
+        storeName: business?.name || 'Beauty Store',
+        storeLogo: business?.logoUrl,
         rewardDescription: loyaltyCard.rewardDescription,
         completedAt: clientCardData.completedAt?.toDate(),
       });
