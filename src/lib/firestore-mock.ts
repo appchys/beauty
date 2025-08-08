@@ -189,9 +189,13 @@ export async function getClientProgress(clientId: string): Promise<ClientProgres
     const loyaltyCard = await getLoyaltyCardById(clientCard.cardId);
     
     if (loyaltyCard) {
+      const business = await getBusinessByAdminId(loyaltyCard.businessId);
+      
       progress.push({
         cardId: clientCard.cardId,
         cardName: loyaltyCard.name,
+        storeName: business?.name || 'Tienda',
+        storeLogo: business?.logoUrl || '/store-default.png',
         currentStickers: clientCard.currentStickers,
         requiredStickers: loyaltyCard.requiredStickers,
         isCompleted: clientCard.isCompleted,
