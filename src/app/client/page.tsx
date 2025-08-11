@@ -30,8 +30,11 @@ export default function ClientDashboard() {
       fetchProgress();
     } else if (localClient) {
       fetchProgressLocal(localClient.id);
+    } else if (status !== 'loading') {
+      // No sesión ni cliente local: terminar loading para mostrar mensaje de acceso
+      setLoading(false);
     }
-  }, [session, localClient]);
+  }, [session, localClient, status]);
 
   const fetchProgress = async () => {
     try {
@@ -164,7 +167,7 @@ export default function ClientDashboard() {
                         {/* Logo de la tienda */}
                         <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden">
                           <img
-                            src={card.storeLogo || '/store-default.png'}
+                            src={card.storeLogo || '/globe.svg'}
                             alt={`Logo de ${card.cardName}`}
                             className="w-full h-full object-cover"
                           />

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Star, CheckCircle, AlertCircle, Clock, QrCode, Trophy } from 'lucide-react';
-import { QRCode as QRCodeBase, LoyaltyCard } from '@/types';
+import { QRCode as QRCodeBase, LoyaltyCard, Business } from '@/types';
 
 // Extiende QRCode para frontend con requiredStickers opcional
 type QRCode = QRCodeBase & { requiredStickers?: number };
@@ -57,6 +57,8 @@ export default function ScanPage() {
       requiredStickers?: number;
     };
   } | null>(null);
+  const [successCardMeta, setSuccessCardMeta] = useState<LoyaltyCard | null>(null);
+  const [successBusiness, setSuccessBusiness] = useState<Business | null>(null);
 
   // Buscar cliente por teléfono
   const lookupByPhone = async () => {
@@ -102,6 +104,13 @@ export default function ScanPage() {
       });
       const data = await response.json();
       if (response.ok) {
+        // Guardar cliente confirmado en localStorage
+        const clientToSave: StoredClient = {
+          id: foundClient.id,
+          name: foundClient.name,
+          phone: foundClient.phone,
+        };
+        localStorage.setItem('beautyClient', JSON.stringify(clientToSave));
         setSuccess({
           message: data.message,
           clientCard: {
@@ -256,6 +265,26 @@ export default function ScanPage() {
     }
   }, [params.code, validateQRCode]);
 
+  // Cargar metadatos de la tarjeta y negocio cuando hay éxito para mostrar diseño igual a "Mis Tarjetas"
+  useEffect(() => {
+    const loadMeta = async () => {
+      if (success && qrData?.cardId) {
+        const meta = await fetchLoyaltyCard(qrData.cardId);
+        setSuccessCardMeta(meta);
+      }
+      if (success && qrData?.businessId) {
+        try {
+          const res = await fetch(`/api/business/${qrData.businessId}`);
+          if (res.ok) {
+            const data = await res.json();
+            setSuccessBusiness(data.business as Business);
+          }
+        } catch {}
+      }
+    };
+    loadMeta();
+  }, [success, qrData?.cardId]);
+
   const handleScan = async () => {
     if (step === 'name') {
       if (!clientData.name || !clientData.phone) {
@@ -352,10 +381,9 @@ export default function ScanPage() {
   }
 
   if (success) {
-    // Simular una "tarjeta" visual como en el dashboard
     const card = success.clientCard;
-    // Fallback: usa requiredStickers de clientCard, si no, 10
-    const requiredStickers = card && typeof card.requiredStickers === 'number' ? card.requiredStickers : 10;
+    // Usamos requiredStickers de meta si existe; si no, del clientCard; fallback 10
+    const requiredStickers = successCardMeta?.requiredStickers ?? (card && typeof card.requiredStickers === 'number' ? card.requiredStickers : 10);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
         <Card className="w-full max-w-md">
@@ -366,40 +394,70 @@ export default function ScanPage() {
           </CardHeader>
           <CardContent>
             {card && (
-              <div className="space-y-4 mb-6">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-semibold text-lg">Progreso de tu tarjeta</span>
-                  {card.isCompleted ? (
-                    <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-4 w-4 mr-1" />Completada</Badge>
-                  ) : (
-                    <Badge variant="outline">{card.currentStickers} stickers</Badge>
-                  )}
-                </div>
-                {/* Barra de progreso visual */}
-                <div>
-                  <div className="flex justify-between text-sm text-gray-600 mb-2">
-                    <span>Progreso</span>
-                    <span>{card.currentStickers} stickers</span>
-                  </div>
-                  <Progress value={card.isCompleted ? 100 : (card.currentStickers / requiredStickers) * 100} className="h-2" />
-                </div>
-                {/* Stickers visuales */}
-                <div className="grid grid-cols-5 gap-2">
-                  {Array.from({ length: requiredStickers }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${idx < card.currentStickers ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-400'}`}
-                    >
-                      <Star className="h-4 w-4" />
+              <div className="mb-6">
+                {/* Tarjeta estilo dashboard */}
+                <div className="overflow-hidden relative bg-gradient-to-br from-pink-300 via-pink-50 to-pink-100 w-full aspect-[1.58] max-w-md mx-auto rounded-xl shadow">
+                  <div className="p-6 pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        {/* Logo */}
+                        <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden">
+                          <img
+                            src={successBusiness?.logoUrl || '/globe.svg'}
+                            alt={`Logo de ${successBusiness?.name || successCardMeta?.name || 'Tarjeta'}`}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <div className="text-lg font-bold text-gray-800">{successCardMeta?.name || 'Tarjeta de Fidelidad'}</div>
+                          <p className="text-sm text-gray-600">{successBusiness?.name || 'Beauty Store'}</p>
+                        </div>
+                      </div>
+                      {card.isCompleted ? (
+                        <Badge className="bg-green-100 text-green-800">
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Completada
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="bg-white">
+                          {card.currentStickers}/{requiredStickers}
+                        </Badge>
+                      )}
                     </div>
-                  ))}
-                </div>
-                {/* Mensaje de recompensa si está completa */}
-                {card.isCompleted && (
-                  <div className="bg-green-50 p-3 rounded-lg text-green-800 font-semibold flex items-center justify-center">
-                    <Trophy className="h-5 w-5 mr-2" />¡Tarjeta completa! Reclama tu recompensa.
                   </div>
-                )}
+                  <div className="px-6 pb-6">
+                    <div className="space-y-4 relative">
+                      {/* Progress */}
+                      <div>
+                        <div className="flex justify-between text-sm text-gray-600 mb-2">
+                          <span>Progreso</span>
+                          <span>{Math.round((card.currentStickers / requiredStickers) * 100)}%</span>
+                        </div>
+                        <Progress value={(card.currentStickers / requiredStickers) * 100} className="h-2" />
+                      </div>
+                      {/* Stickers */}
+                      <div className="grid grid-cols-5 gap-2">
+                        {Array.from({ length: requiredStickers }).map((_, index) => (
+                          <div
+                            key={index}
+                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                              index < card.currentStickers ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-400'
+                            }`}
+                          >
+                            <Star className="h-4 w-4" />
+                          </div>
+                        ))}
+                      </div>
+                      {/* Completion msg */}
+                      {card.isCompleted && (
+                        <div className="text-sm text-gray-700 flex items-center">
+                          <Trophy className="h-4 w-4 mr-2" />
+                          ¡Tarjeta completa! Reclama tu recompensa.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
             {storedClient && (
