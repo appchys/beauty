@@ -24,15 +24,13 @@ async function fetchLoyaltyCard(cardId: string): Promise<LoyaltyCard | null> {
 
 interface ClientData {
   name: string;
-  email: string;
-  phone?: string;
+  phone: string;
 }
 
 interface StoredClient {
   id: string;
   name: string;
-  email: string;
-  phone?: string;
+  phone: string;
 }
 
 export default function ScanPage() {
@@ -43,9 +41,11 @@ export default function ScanPage() {
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [storedClient, setStoredClient] = useState<StoredClient | null>(null);
+  const [foundClient, setFoundClient] = useState<StoredClient | null>(null);
+  // step: 'phone' (ingresar celular), 'confirm' (mostrar nombre si existe), 'name' (pedir nombre si no existe)
+  const [step, setStep] = useState<'phone' | 'confirm' | 'name'>('phone');
   const [clientData, setClientData] = useState<ClientData>({
     name: '',
-    email: '',
     phone: ''
   });
   const [processing, setProcessing] = useState(false);
@@ -58,6 +58,67 @@ export default function ScanPage() {
     };
   } | null>(null);
 
+  // Buscar cliente por teléfono
+  const lookupByPhone = async () => {
+    setError(null);
+    if (!clientData.phone) {
+      setError('Ingresa tu número de celular');
+      return;
+    }
+    try {
+      const res = await fetch(`/api/client/lookup?phone=${encodeURIComponent(clientData.phone)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'No se pudo validar el celular');
+        return;
+      }
+      if (data.exists && data.user) {
+        setFoundClient({ id: data.user.id, name: data.user.name, phone: data.user.phone });
+        setStep('confirm');
+      } else {
+        setFoundClient(null);
+        setStep('name');
+      }
+    } catch (e) {
+      setError('Error al verificar el celular');
+    }
+  };
+
+  // Procesar con cliente encontrado por teléfono
+  const processWithFoundClient = async () => {
+    if (!foundClient) return;
+    setProcessing(true);
+    try {
+      const response = await fetch(`/api/scan/${params.code}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientData: {
+            name: foundClient.name,
+            phone: foundClient.phone,
+            clientId: foundClient.id,
+          },
+        }),
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setSuccess({
+          message: data.message,
+          clientCard: {
+            ...data.clientCard,
+            requiredStickers: qrData && qrData.requiredStickers ? qrData.requiredStickers : 10,
+          },
+        });
+      } else {
+        setError(data.error);
+      }
+    } catch (e) {
+      setError('Error al procesar el escaneo');
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   // Verificar si hay un cliente guardado en localStorage
   useEffect(() => {
     const savedClient = localStorage.getItem('beautyClient');
@@ -67,8 +128,7 @@ export default function ScanPage() {
         setStoredClient(client);
         setClientData({
           name: client.name,
-          email: client.email,
-          phone: client.phone || ''
+          phone: client.phone
         });
       } catch (error) {
         console.error('Error parsing stored client:', error);
@@ -98,6 +158,7 @@ export default function ScanPage() {
           await processWithStoredClient();
         } else {
           setShowRegistration(data.requiresRegistration);
+          if (data.requiresRegistration) setStep('phone');
         }
       } else {
         setError(data.error);
@@ -122,7 +183,6 @@ export default function ScanPage() {
         },
         body: JSON.stringify({
           clientData: {
-            email: storedClient.email,
             name: storedClient.name,
             phone: storedClient.phone,
             clientId: storedClient.id
@@ -163,7 +223,6 @@ export default function ScanPage() {
         },
         body: JSON.stringify({
           clientData: {
-            email: storedClient.email,
             name: storedClient.name,
             phone: storedClient.phone
           }
@@ -198,8 +257,13 @@ export default function ScanPage() {
   }, [params.code, validateQRCode]);
 
   const handleScan = async () => {
-    if (!clientData.name || !clientData.email) {
-      setError('Nombre y email son requeridos');
+    if (step === 'name') {
+      if (!clientData.name || !clientData.phone) {
+        setError('Nombre y celular son requeridos');
+        return;
+      }
+    } else if (step === 'phone') {
+      // En paso teléfono no se debería llamar directamente a handleScan
       return;
     }
 
@@ -214,7 +278,6 @@ export default function ScanPage() {
         },
         body: JSON.stringify({
           clientData: {
-            email: clientData.email,
             name: clientData.name,
             phone: clientData.phone,
           }
@@ -228,9 +291,8 @@ export default function ScanPage() {
         const clientToSave = {
           id: data.clientId || Date.now().toString(),
           name: clientData.name,
-          email: clientData.email,
           phone: clientData.phone
-        };
+        } as StoredClient;
         localStorage.setItem('beautyClient', JSON.stringify(clientToSave));
         setSuccess({
           message: data.message,
@@ -254,7 +316,7 @@ export default function ScanPage() {
   const handleLogout = () => {
     localStorage.removeItem('beautyClient');
     setStoredClient(null);
-    setClientData({ name: '', email: '', phone: '' });
+    setClientData({ name: '', phone: '' });
     window.location.reload();
   };
 
@@ -402,51 +464,80 @@ export default function ScanPage() {
             <>
               <div className="text-center">
                 <p className="text-gray-600 mb-4">
-                  Para obtener tu sticker, necesitamos algunos datos básicos:
+                  Para obtener tu sticker, ingresa tu celular. Si ya estás registrado te mostraremos tu nombre.
                 </p>
               </div>
 
               <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nombre completo *
-                  </label>
-                  <input
-                    type="text"
-                    value={clientData.name}
-                    onChange={(e) => setClientData({ ...clientData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="Tu nombre completo"
-                    required
-                  />
-                </div>
+                {step === 'phone' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Celular *</label>
+                    <input
+                      type="tel"
+                      value={clientData.phone}
+                      onChange={(e) => setClientData({ ...clientData, phone: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      placeholder="Ej: 3001234567"
+                      required
+                    />
+                    <button
+                      onClick={lookupByPhone}
+                      className="mt-3 w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
+                    >
+                      Continuar
+                    </button>
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    value={clientData.email}
-                    onChange={(e) => setClientData({ ...clientData, email: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="tu@email.com"
-                    required
-                  />
-                </div>
+                {step === 'confirm' && foundClient && (
+                  <div className="space-y-3 text-center">
+                    <p className="text-gray-700">¿Eres <strong>{foundClient.name}</strong>?</p>
+                    <button
+                      onClick={processWithFoundClient}
+                      className="w-full bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
+                      disabled={processing}
+                    >
+                      Sí, soy yo
+                    </button>
+                    <button
+                      onClick={() => { setFoundClient(null); setStep('phone'); }}
+                      className="w-full border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50"
+                      disabled={processing}
+                    >
+                      No, usar otro número
+                    </button>
+                  </div>
+                )}
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Teléfono (opcional)
-                  </label>
-                  <input
-                    type="tel"
-                    value={clientData.phone}
-                    onChange={(e) => setClientData({ ...clientData, phone: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    placeholder="123456789"
-                  />
-                </div>
+                {step === 'name' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nombre completo *</label>
+                      <input
+                        type="text"
+                        value={clientData.name}
+                        onChange={(e) => setClientData({ ...clientData, name: e.target.value })}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        placeholder="Tu nombre completo"
+                        required
+                      />
+                    </div>
+                    <button
+                      onClick={handleScan}
+                      disabled={processing || !clientData.name || !clientData.phone}
+                      className="w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-300"
+                    >
+                      Registrar y Obtener Sticker
+                    </button>
+                    <button
+                      onClick={() => setStep('phone')}
+                      className="w-full mt-2 border border-gray-300 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-50"
+                      disabled={processing}
+                    >
+                      Volver
+                    </button>
+                  </>
+                )}
               </div>
             </>
           ) : (
@@ -467,10 +558,10 @@ export default function ScanPage() {
           )}
 
           {/* Solo mostrar el botón si no hay cliente guardado o si necesita registro */}
-          {(!storedClient || showRegistration) && (
+          {(!storedClient || showRegistration) && step !== 'name' && (
             <button
               onClick={handleScan}
-              disabled={processing || (showRegistration && (!clientData.name || !clientData.email))}
+              disabled
               className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {processing ? (
@@ -481,7 +572,7 @@ export default function ScanPage() {
               ) : (
                 <>
                   <Star className="h-5 w-5" />
-                  <span>{showRegistration ? 'Registrar y Obtener Sticker' : 'Obtener Sticker'}</span>
+                  <span>{showRegistration ? 'Continuar' : 'Obtener Sticker'}</span>
                 </>
               )}
             </button>

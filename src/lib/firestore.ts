@@ -64,6 +64,26 @@ export async function getUserByEmail(email: string): Promise<User | null> {
   } as User;
 }
 
+// Buscar usuario por número de teléfono
+export async function getUserByPhone(phone: string): Promise<User | null> {
+  const q = query(collection(db, 'users'), where('phone', '==', phone));
+  const querySnapshot = await getDocs(q);
+  
+  if (querySnapshot.empty) {
+    return null;
+  }
+  
+  const userDoc = querySnapshot.docs[0];
+  const data = userDoc.data();
+  
+  return {
+    ...data,
+    id: userDoc.id,
+    createdAt: data.createdAt.toDate(),
+    updatedAt: data.updatedAt.toDate(),
+  } as User;
+}
+
 export async function getUserById(id: string): Promise<User | null> {
   const userDoc = await getDoc(doc(db, 'users', id));
   

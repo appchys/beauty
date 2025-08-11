@@ -2,7 +2,7 @@ import { db } from './firebase';
 import { doc, getDoc, updateDoc, query, collection, where, getDocs } from 'firebase/firestore';
 import { Business } from '@/types';
 import { getServerSession } from 'next-auth';
-import { authOptions } from './auth-config';
+import { authOptions } from './auth';
 
 export async function getStoreProfile(): Promise<Business | null> {
   try {

@@ -1,6 +1,6 @@
 export interface User {
   id: string;
-  email: string;
+  email?: string;
   name: string;
   role: 'admin' | 'client';
   password?: string; // Hacer password opcional

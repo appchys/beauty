@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getQRCodeByCode, addStickerToClientCard, getUserByEmail, createUser, assignQRCodeToClient } from '@/lib/firestore';
+import { getQRCodeByCode, addStickerToClientCard, getUserByPhone, createUser, assignQRCodeToClient } from '@/lib/firestore';
 
 export async function GET(
   request: NextRequest,
@@ -60,7 +60,7 @@ export async function POST(
 
     // Si no hay cliente asignado, crear o encontrar cliente
     if (!clientId) {
-      if (!clientData || !clientData.email || !clientData.name) {
+      if (!clientData || !clientData.phone || !clientData.name) {
         return NextResponse.json({ 
           error: 'Client registration required',
           requiresRegistration: true 
@@ -71,13 +71,12 @@ export async function POST(
       if (clientData.clientId) {
         clientId = clientData.clientId;
       } else {
-        // Buscar cliente existente
-        let client = await getUserByEmail(clientData.email);
+        // Buscar cliente existente por teléfono
+        let client = await getUserByPhone(clientData.phone);
         
         if (!client) {
-          // Crear cliente en Firestore
+          // Crear cliente en Firestore con teléfono como identificador principal
           client = await createUser({
-            email: clientData.email,
             name: clientData.name,
             role: 'client',
             phone: clientData.phone,
