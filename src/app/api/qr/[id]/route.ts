@@ -6,7 +6,7 @@ import { DocumentReference, FieldValue } from 'firebase-admin/firestore';
 
 // Indicar a Next.js que esta es una ruta dinámica
 export const dynamic = 'force-dynamic';
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function PATCH(
   request: NextRequest,
