@@ -301,136 +301,104 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Generar QR Section */}
-        <div className="mb-8">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <QrCode className="h-6 w-6 mr-2" />
-                Generar Código QR Único
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Form */}
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Seleccionar Tarjeta de Fidelidad
-                    </label>
-                    <select
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      value={selectedCard}
-                      onChange={(e) => setSelectedCard(e.target.value)}
-                    >
-                      <option value="">Selecciona una tarjeta...</option>
-                      {cards.map((card) => (
-                        <option key={card.id} value={card.id}>
-                          {card.name} ({card.requiredStickers} stickers)
-                        </option>
-                      ))}
-                    </select>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Email del Cliente (Opcional)
-                    </label>
-                    <input
-                      type="email"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                      placeholder="cliente@email.com"
-                      value={clientEmail}
-                      onChange={(e) => setClientEmail(e.target.value)}
-                    />
-                    <p className="text-sm text-gray-500 mt-1">
-                      Si especificas un email, el QR será único para ese cliente
-                    </p>
-                  </div>
 
-                  <button
-                    onClick={generateQRCode}
-                    disabled={!selectedCard}
-                    className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-                  >
-                    <Plus className="h-5 w-5 mr-2" />
-                    Generar QR Único
-                  </button>
-                </div>
-
-                {/* QR Preview */}
-                <div className="flex items-center justify-center">
-                  {generatedQR ? (
-                    <div className="text-center space-y-4">
-                      <div className="bg-white p-4 rounded-lg shadow-lg">
-                        <img
-                          src={generatedQR.qrCodeImage}
-                          alt="Código QR generado"
-                          className="w-64 h-64 mx-auto"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-600">URL de escaneo:</p>
-                        <p className="text-xs bg-gray-100 p-2 rounded break-all">
-                          {generatedQR.scanUrl}
-                        </p>
-                        <button
-                          onClick={downloadQR}
-                          className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors flex items-center mx-auto"
-                        >
-                          <Download className="h-4 w-4 mr-2" />
-                          Descargar QR
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center text-gray-400">
-                      <QrCode className="h-32 w-32 mx-auto mb-4" />
-                      <p>El código QR aparecerá aquí</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Cards List */}
+        {/* Lista de Tarjetas */}
         <Card>
           <CardHeader>
-            <CardTitle>Tarjetas de Fidelidad</CardTitle>
+            <CardTitle className="flex items-center">
+              <Star className="h-6 w-6 mr-2" />
+              Tarjetas de Fidelidad Activas
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            {cards.length === 0 ? (
-              <div className="text-center py-8">
-                <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay tarjetas aún</h3>
-                <p className="text-gray-600">Crea tu primera tarjeta de fidelidad para comenzar</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {cards.map((card) => (
-                  <div key={card.id} className="border border-gray-200 rounded-lg p-4">
-                    <h3 className="font-semibold text-gray-900">{card.name}</h3>
-                    <p className="text-sm text-gray-600 mt-1">{card.description}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="text-sm text-purple-600">
-                        {card.requiredStickers} stickers
-                      </span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        card.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
-                      }`}>
-                        {card.isActive ? 'Activa' : 'Inactiva'}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {cards.length === 0 ? (
+                <div className="text-center py-8 col-span-full">
+                  <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay tarjetas aún</h3>
+                  <p className="text-gray-600">Crea tu primera tarjeta de fidelidad para comenzar</p>
+                </div>
+              ) : (
+                cards.map((card) => (
+                  <Card key={card.id} className="bg-white shadow-lg">
+                    <CardHeader>
+                      <CardTitle>{card.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm text-gray-600">{card.description}</p>
+                          <p className="mt-2 font-medium">
+                            {card.requiredStickers} stickers requeridos
+                          </p>
+                          <p className="text-sm text-purple-600 mt-1">
+                            Recompensa: {card.rewardDescription}
+                          </p>
+                        </div>
+                        
+                        {/* Generador de QR integrado */}
+                        <div className="pt-4 border-t">
+                          <div className="space-y-3">
+                            <input
+                              type="email"
+                              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                              placeholder="Email del cliente (opcional)"
+                              onChange={(e) => {
+                                setClientEmail(e.target.value);
+                                setSelectedCard(card.id);
+                              }}
+                            />
+                            <button
+                              onClick={() => {
+                                setSelectedCard(card.id);
+                                generateQRCode();
+                              }}
+                              className="w-full bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 text-sm flex items-center justify-center"
+                            >
+                              <QrCode className="h-4 w-4 mr-2" />
+                              Generar QR
+                            </button>
+                          </div>
+                          
+                          {/* Preview de QR si fue generado para esta tarjeta */}
+                          {generatedQR && selectedCard === card.id && (
+                            <div className="mt-4 text-center space-y-3">
+                              <div className="bg-white p-2 rounded-lg shadow-sm">
+                                <img
+                                  src={generatedQR.qrCodeImage}
+                                  alt="QR generado"
+                                  className="w-32 h-32 mx-auto"
+                                />
+                              </div>
+                              <button
+                                onClick={downloadQR}
+                                className="bg-green-600 text-white py-1 px-3 rounded-lg hover:bg-green-700 text-sm flex items-center mx-auto"
+                              >
+                                <Download className="h-3 w-3 mr-1" />
+                                Descargar
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="mt-2 pt-4 border-t">
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            card.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600'
+                          }`}>
+                            {card.isActive ? 'Activa' : 'Inactiva'}
+                          </span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
           </CardContent>
         </Card>
 
-        {/* QR Codes Generated */}
+        {/* Códigos QR Generados */}
         <Card className="mt-8">
           <CardHeader>
             <CardTitle>Códigos QR Generados</CardTitle>
