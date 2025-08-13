@@ -205,110 +205,106 @@ export default function AdminDashboard() {
           </Card>
         </div>
 
-        {/* Crear Tarjeta Section */}
-        <div className="mb-8">
-          <Card>
+        {/* Formulario de crear tarjeta (se muestra/oculta) */}
+        {showCreateCard && (
+          <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Star className="h-6 w-6 mr-2" />
-                  Crear Nueva Tarjeta de Fidelidad
-                </div>
-                <button
-                  onClick={() => setShowCreateCard(!showCreateCard)}
-                  className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Tarjeta
-                </button>
+              <CardTitle className="flex items-center">
+                <Star className="h-6 w-6 mr-2" />
+                Crear Nueva Tarjeta de Fidelidad
               </CardTitle>
             </CardHeader>
-            {showCreateCard && (
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Nombre de la Tarjeta
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Ej: Tarjeta de Masajes"
-                      value={cardForm.name}
-                      onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Stickers Requeridos
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="20"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      value={cardForm.requiredStickers}
-                      onChange={(e) => setCardForm({ ...cardForm, requiredStickers: parseInt(e.target.value) || 10 })}
-                    />
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción (Opcional)
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Descripción de la tarjeta..."
-                      value={cardForm.description}
-                      onChange={(e) => setCardForm({ ...cardForm, description: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Descripción de la Recompensa
-                    </label>
-                    <input
-                      type="text"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Ej: Masaje gratis de 60 minutos"
-                      value={cardForm.rewardDescription}
-                      onChange={(e) => setCardForm({ ...cardForm, rewardDescription: e.target.value })}
-                    />
-                  </div>
-                  
-                  <div className="md:col-span-2 flex space-x-3">
-                    <button
-                      onClick={createCard}
-                      disabled={!cardForm.name || !cardForm.rewardDescription}
-                      className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Crear Tarjeta
-                    </button>
-                    <button
-                      onClick={() => setShowCreateCard(false)}
-                      className="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </div>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre de la Tarjeta
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ej: Tarjeta de Masajes"
+                    value={cardForm.name}
+                    onChange={(e) => setCardForm({ ...cardForm, name: e.target.value })}
+                  />
                 </div>
-              </CardContent>
-            )}
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Stickers Requeridos
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    value={cardForm.requiredStickers}
+                    onChange={(e) => setCardForm({ ...cardForm, requiredStickers: parseInt(e.target.value) || 10 })}
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción (Opcional)
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Descripción de la tarjeta..."
+                    value={cardForm.description}
+                    onChange={(e) => setCardForm({ ...cardForm, description: e.target.value })}
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Descripción de la Recompensa
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Ej: Masaje gratis de 60 minutos"
+                    value={cardForm.rewardDescription}
+                    onChange={(e) => setCardForm({ ...cardForm, rewardDescription: e.target.value })}
+                  />
+                </div>
+                
+                <div className="md:col-span-2 flex space-x-3">
+                  <button
+                    onClick={createCard}
+                    disabled={!cardForm.name || !cardForm.rewardDescription}
+                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Crear Tarjeta
+                  </button>
+                  <button
+                    onClick={() => setShowCreateCard(false)}
+                    className="bg-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-400 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </CardContent>
           </Card>
-        </div>
-
-
+        )}
 
         {/* Lista de Tarjetas */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center">
-              <Star className="h-6 w-6 mr-2" />
-              Tarjetas de Fidelidad Activas
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center">
+                <Star className="h-6 w-6 mr-2" />
+                Tarjetas de Fidelidad Activas
+              </div>
+              <button
+                onClick={() => setShowCreateCard(!showCreateCard)}
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Tarjeta
+              </button>
             </CardTitle>
           </CardHeader>
           <CardContent>
