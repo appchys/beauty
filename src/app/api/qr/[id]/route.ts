@@ -1,10 +1,17 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
 import { DocumentReference, FieldValue } from 'firebase-admin/firestore';
 
-export async function PATCH(req: Request) {
+// Indicar a Next.js que esta es una ruta dinámica
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -15,16 +22,16 @@ export async function PATCH(req: Request) {
       );
     }
 
-    const qrId = req.url.split('/').pop();
+    const { id } = params;
 
-    if (!qrId) {
+    if (!id) {
       return NextResponse.json(
         { error: 'Se requiere el ID del código QR' },
         { status: 400 }
       );
     }
 
-    const qrRef = adminDb.doc(`qrCodes/${qrId}`) as DocumentReference;
+    const qrRef = adminDb.doc(`qrCodes/${id}`) as DocumentReference;
 
     await qrRef.update({
       isUsed: false,

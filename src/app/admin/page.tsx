@@ -12,7 +12,6 @@ export default function AdminDashboard() {
   const [qrCodes, setQRCodes] = useState<QRCodeType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateCard, setShowCreateCard] = useState(false);
-  const [showCreateQR, setShowCreateQR] = useState(false);
   const [selectedCard, setSelectedCard] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [generatedQR, setGeneratedQR] = useState<{
