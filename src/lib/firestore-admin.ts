@@ -1,4 +1,4 @@
-import { adminDb } from './firebase-admin';
+import { getAdminDb } from './firebase-admin';
 import { 
   User, 
   Business, 
@@ -20,11 +20,13 @@ export async function createUser(userData: Omit<User, 'id' | 'createdAt' | 'upda
     updatedAt: new Date(),
   };
   
+  const adminDb = getAdminDb();
   await adminDb.collection('users').doc(user.id).set(user);
   return user;
 }
 
 export async function getUserByEmail(email: string): Promise<User | null> {
+  const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('users').where('email', '==', email).get();
   
   if (snapshot.empty) {
@@ -35,6 +37,7 @@ export async function getUserByEmail(email: string): Promise<User | null> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
+  const adminDb = getAdminDb();
   const doc = await adminDb.collection('users').doc(id).get();
   
   if (!doc.exists) {
@@ -53,11 +56,13 @@ export async function createBusiness(businessData: Omit<Business, 'id' | 'create
     updatedAt: new Date(),
   };
   
+  const adminDb = getAdminDb();
   await adminDb.collection('businesses').doc(business.id).set(business);
   return business;
 }
 
 export async function getBusinessByAdminId(adminId: string): Promise<Business | null> {
+  const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('businesses').where('adminId', '==', adminId).get();
   
   if (snapshot.empty) {
@@ -76,11 +81,13 @@ export async function createLoyaltyCard(cardData: Omit<LoyaltyCard, 'id' | 'crea
     updatedAt: new Date(),
   };
   
+  const adminDb = getAdminDb();
   await adminDb.collection('loyaltyCards').doc(card.id).set(card);
   return card;
 }
 
 export async function getLoyaltyCardsByBusinessId(businessId: string): Promise<LoyaltyCard[]> {
+  const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('loyaltyCards')
     .where('businessId', '==', businessId)
     .orderBy('createdAt', 'desc')
@@ -90,6 +97,7 @@ export async function getLoyaltyCardsByBusinessId(businessId: string): Promise<L
 }
 
 export async function getLoyaltyCardById(cardId: string): Promise<LoyaltyCard | null> {
+  const adminDb = getAdminDb();
   const doc = await adminDb.collection('loyaltyCards').doc(cardId).get();
   
   if (!doc.exists) {
@@ -112,11 +120,13 @@ export async function createUniqueQRCode(businessId: string, cardId: string, cli
     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // Expira en 30 días
   };
   
+  const adminDb = getAdminDb();
   await adminDb.collection('qrCodes').doc(qrCode.id).set(qrCode);
   return qrCode;
 }
 
 export async function getQRCodeByCode(code: string): Promise<QRCode | null> {
+  const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('qrCodes').where('code', '==', code).get();
   
   if (snapshot.empty) {
@@ -127,6 +137,7 @@ export async function getQRCodeByCode(code: string): Promise<QRCode | null> {
 }
 
 export async function assignQRCodeToClient(qrCodeId: string, clientId: string): Promise<void> {
+  const adminDb = getAdminDb();
   await adminDb.collection('qrCodes').doc(qrCodeId).update({
     clientId,
     updatedAt: new Date(),
@@ -141,6 +152,7 @@ async function getClientIdByEmail(email: string): Promise<string | undefined> {
 // Client Card functions
 export async function getOrCreateClientCard(clientId: string, cardId: string): Promise<ClientCard> {
   // Buscar si ya existe una tarjeta del cliente para esta loyaltyCard
+  const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('clientCards')
     .where('clientId', '==', clientId)
     .where('cardId', '==', cardId)
@@ -166,6 +178,7 @@ export async function getOrCreateClientCard(clientId: string, cardId: string): P
 }
 
 export async function addStickerToClientCard(clientId: string, cardId: string, qrCodeId: string): Promise<ClientCard> {
+  const adminDb = getAdminDb();
   const batch = adminDb.batch();
   
   // Obtener la tarjeta del cliente
@@ -220,6 +233,7 @@ export async function addStickerToClientCard(clientId: string, cardId: string, q
 }
 
 export async function getClientProgress(clientId: string): Promise<ClientProgress[]> {
+  const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('clientCards')
     .where('clientId', '==', clientId)
     .get();
@@ -253,6 +267,7 @@ export async function getClientProgress(clientId: string): Promise<ClientProgres
 
 // Dashboard Stats
 export async function getDashboardStats(businessId: string): Promise<DashboardStats> {
+  const adminDb = getAdminDb();
   const [cardsSnapshot, scansSnapshot, clientCardsSnapshot] = await Promise.all([
     adminDb.collection('loyaltyCards').where('businessId', '==', businessId).get(),
     adminDb.collection('stickerScans').where('businessId', '==', businessId).orderBy('scannedAt', 'desc').limit(10).get(),

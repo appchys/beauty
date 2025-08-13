@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { adminDb } from '@/lib/firebase-admin';
-import { DocumentReference, FieldValue } from 'firebase-admin/firestore';
+import { getAdminDb } from '@/lib/firebase-admin';
 
 // Indicar a Next.js que esta es una ruta dinámica
 export const dynamic = 'force-dynamic';
@@ -31,13 +30,14 @@ export async function PATCH(
       );
     }
 
-    const qrRef = adminDb.doc(`qrCodes/${id}`) as DocumentReference;
+  const adminDb = getAdminDb();
+  const qrRef = adminDb.doc(`qrCodes/${id}`);
 
     await qrRef.update({
       isUsed: false,
       usedAt: null,
       clientId: null,
-      updatedAt: FieldValue.serverTimestamp()
+  updatedAt: new Date()
     });
 
     return NextResponse.json({
