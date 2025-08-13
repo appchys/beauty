@@ -19,6 +19,7 @@ export default function AdminDashboard() {
     qrCodeImage: string;
     scanUrl: string;
   } | null>(null);
+  const [showQRModal, setShowQRModal] = useState(false);
   
   // Form data para crear tarjeta
   const [cardForm, setCardForm] = useState({
@@ -68,8 +69,10 @@ export default function AdminDashboard() {
         const data = await response.json();
         setGeneratedQR({
           qrCodeImage: data.qrCodeImage,
-          scanUrl: data.scanUrl,
+          scanUrl: data.qrCode.code, // Usamos el código directamente del QR generado
         });
+        // Mostrar el modal con el QR generado
+        setShowQRModal(true);
         // Refrescar la lista de QR codes
         fetchCards();
       }
@@ -361,24 +364,98 @@ export default function AdminDashboard() {
                             </button>
                           </div>
                           
-                          {/* Preview de QR si fue generado para esta tarjeta */}
-                          {generatedQR && selectedCard === card.id && (
-                            <div className="mt-4 text-center space-y-3">
-                              <div className="bg-white p-2 rounded-lg shadow-sm">
-                                <img
-                                  src={generatedQR.qrCodeImage}
-                                  alt="QR generado"
-                                  className="w-32 h-32 mx-auto"
-                                />
+                          {/* Modal para mostrar QR */}
+                          {showQRModal && generatedQR && selectedCard === card.id && (
+                            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                              <div className="bg-white rounded-lg p-6 max-w-sm w-full">
+                                <div className="text-center space-y-4">
+                                  <h3 className="text-xl font-semibold text-gray-900">Código QR Generado</h3>
+                                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                                    <img
+                                      src={generatedQR.qrCodeImage}
+                                      alt="QR generado"
+                                      className="w-48 h-48 mx-auto"
+                                    />
+                                  </div>
+                                  <div className="space-y-3">
+                                    <p className="text-sm text-gray-600">
+                                      Enlace del código QR:
+                                    </p>
+                                    <div className="flex items-center gap-2 bg-gray-50 p-2 rounded">
+                                      <input
+                                        type="text"
+                                        readOnly
+                                        value={`https://beauty-pearl.vercel.app/scan/${generatedQR.scanUrl}`}
+                                        className="text-sm bg-transparent flex-1 outline-none"
+                                      />
+                                      <button
+                                        onClick={() => {
+                                          const url = `https://beauty-pearl.vercel.app/scan/${generatedQR.scanUrl}`;
+                                          const copyToClipboard = (text: string) => {
+                                            // Método del elemento temporal
+                                            const textarea = document.createElement('textarea');
+                                            textarea.value = text;
+                                            textarea.style.position = 'fixed'; // Evita scroll
+                                            textarea.style.opacity = '0';
+                                            document.body.appendChild(textarea);
+                                            textarea.select();
+                                            
+                                            try {
+                                              document.execCommand('copy');
+                                              document.body.removeChild(textarea);
+                                              alert('Enlace copiado al portapapeles');
+                                            } catch (err) {
+                                              console.error('Error al copiar:', err);
+                                              document.body.removeChild(textarea);
+                                              alert('No se pudo copiar el enlace');
+                                            }
+                                          };
+
+                                          // Intentar usar la API moderna primero
+                                          if (navigator?.clipboard?.writeText) {
+                                            navigator.clipboard.writeText(url)
+                                              .then(() => alert('Enlace copiado al portapapeles'))
+                                              .catch(() => copyToClipboard(url));
+                                          } else {
+                                            // Fallback al método antiguo
+                                            copyToClipboard(url);
+                                          }
+                                        }}
+                                        className="text-sm text-purple-600 hover:text-purple-700 whitespace-nowrap px-3 py-1 rounded hover:bg-purple-50"
+                                      >
+                                        Copiar
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2 justify-center pt-4">
+                                    <button
+                                      onClick={downloadQR}
+                                      className="bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 text-sm flex items-center"
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Descargar
+                                    </button>
+                                    <button
+                                      onClick={() => setShowQRModal(false)}
+                                      className="bg-gray-200 text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-300 text-sm"
+                                    >
+                                      Cerrar
+                                    </button>
+                                  </div>
+                                </div>
                               </div>
-                              <button
-                                onClick={downloadQR}
-                                className="bg-green-600 text-white py-1 px-3 rounded-lg hover:bg-green-700 text-sm flex items-center mx-auto"
-                              >
-                                <Download className="h-3 w-3 mr-1" />
-                                Descargar
-                              </button>
                             </div>
+                          )}
+                          
+                          {/* Botón para mostrar QR cuando ya está generado */}
+                          {generatedQR && selectedCard === card.id && !showQRModal && (
+                            <button
+                              onClick={() => setShowQRModal(true)}
+                              className="mt-4 w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 text-sm flex items-center justify-center"
+                            >
+                              <QrCode className="h-4 w-4 mr-2" />
+                              Ver QR Generado
+                            </button>
                           )}
                         </div>
                         
@@ -436,7 +513,7 @@ export default function AdminDashboard() {
                       </div>
                       <button
                         onClick={() => {
-                          navigator.clipboard.writeText(`${window.location.origin}/scan/${qr.code}`);
+                          navigator.clipboard.writeText(`https://beauty-pearl.vercel.app/scan/${qr.code}`);
                           alert('URL copiada al portapapeles');
                         }}
                         className="mt-2 w-full bg-blue-600 text-white py-1 px-2 rounded text-xs hover:bg-blue-700 transition-colors"
