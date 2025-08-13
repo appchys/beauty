@@ -499,3 +499,34 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
     recentScans,
   };
 }
+
+// Función para obtener estadísticas por nivel de stickers de una tarjeta específica
+export async function getCardStickerStatistics(cardId: string): Promise<{ [stickerCount: number]: number }> {
+  try {
+    // Obtener todas las tarjetas de cliente para esta tarjeta de fidelidad
+    const q = query(
+      collection(db, 'clientCards'),
+      where('cardId', '==', cardId)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    // Contar cuántos clientes tienen cada cantidad de stickers
+    const statistics: { [stickerCount: number]: number } = {};
+    
+    querySnapshot.docs.forEach(doc => {
+      const clientCard = doc.data() as ClientCard;
+      const stickerCount = clientCard.currentStickers;
+      
+      if (statistics[stickerCount]) {
+        statistics[stickerCount]++;
+      } else {
+        statistics[stickerCount] = 1;
+      }
+    });
+    
+    return statistics;
+  } catch (error) {
+    console.error('Error getting card sticker statistics:', error);
+    return {};
+  }
+}

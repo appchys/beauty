@@ -154,57 +154,6 @@ export default function AdminDashboard() {
           <p className="text-gray-600">Gestiona tus tarjetas de fidelidad y genera códigos QR únicos</p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                <Star className="h-6 w-6 text-blue-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{cards.length}</p>
-                <p className="text-gray-600">Tarjetas Totales</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mr-4">
-                <Users className="h-6 w-6 text-green-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{qrCodes.filter(qr => qr.isUsed).length}</p>
-                <p className="text-gray-600">QR Usados</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mr-4">
-                <QrCode className="h-6 w-6 text-purple-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{qrCodes.length}</p>
-                <p className="text-gray-600">QR Generados</p>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
-                <TrendingUp className="h-6 w-6 text-orange-600" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900">{qrCodes.filter(qr => !qr.isUsed).length}</p>
-                <p className="text-gray-600">QR Disponibles</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Formulario de crear tarjeta (se muestra/oculta) */}
         {showCreateCard && (
           <Card className="mb-8">
@@ -494,6 +443,59 @@ export default function AdminDashboard() {
                   </div>
                 ))
               )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Estadísticas - Movido después de las tarjetas */}
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <TrendingUp className="h-5 w-5 mr-2" />
+              Estadísticas Generales
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                  <Star className="h-4 w-4 text-blue-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-gray-900">{cards.length}</p>
+                  <p className="text-xs text-gray-600">Tarjetas Totales</p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                  <Users className="h-4 w-4 text-green-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-gray-900">{qrCodes.filter(qr => qr.isUsed).length}</p>
+                  <p className="text-xs text-gray-600">QR Usados</p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                  <QrCode className="h-4 w-4 text-purple-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-gray-900">{qrCodes.length}</p>
+                  <p className="text-xs text-gray-600">QR Generados</p>
+                </div>
+              </div>
+
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                  <TrendingUp className="h-4 w-4 text-orange-600" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-gray-900">{qrCodes.filter(qr => !qr.isUsed).length}</p>
+                  <p className="text-xs text-gray-600">QR Disponibles</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

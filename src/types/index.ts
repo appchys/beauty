@@ -89,3 +89,7 @@ export interface DashboardStats {
   completedCards: number;
   recentScans: StickerScan[];
 }
+
+export interface CardStickerStatistics {
+  [stickerCount: number]: number;
+}
