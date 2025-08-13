@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { adminDb } from '@/lib/firebase-admin';
@@ -9,8 +9,8 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);
@@ -22,7 +22,7 @@ export async function PATCH(
       );
     }
 
-    const { id } = params;
+  const { id } = await params;
 
     if (!id) {
       return NextResponse.json(
