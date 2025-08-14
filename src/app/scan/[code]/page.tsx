@@ -396,7 +396,12 @@ export default function ScanPage() {
             {card && (
               <div className="mb-6">
                 {/* Tarjeta estilo dashboard */}
-                <div className="overflow-hidden relative bg-gradient-to-br from-pink-300 via-pink-50 to-pink-100 w-full aspect-[1.58] max-w-md mx-auto rounded-xl shadow">
+                <div 
+                  className="overflow-hidden relative w-full aspect-[1.58] max-w-md mx-auto rounded-xl shadow"
+                  style={{ 
+                    background: 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
+                  }}
+                >
                   <div className="p-6 pb-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
