@@ -4,7 +4,6 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { ClientProgress } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Star, Trophy, Clock, CheckCircle } from 'lucide-react';
 
@@ -192,18 +191,6 @@ export default function ClientDashboard() {
                   
                   <CardContent>
                     <div className="space-y-4 relative">
-                      {/* Progress Bar */}
-                      <div>
-                        <div className="flex justify-between text-sm text-gray-600 mb-2">
-                          <span>Progreso</span>
-                          <span>{Math.round((card.currentStickers / card.requiredStickers) * 100)}%</span>
-                        </div>
-                        <Progress 
-                          value={(card.currentStickers / card.requiredStickers) * 100} 
-                          className="h-2"
-                        />
-                      </div>
-
                       {/* Stickers Visual */}
                       <div className="grid grid-cols-5 gap-2">
                         {Array.from({ length: card.requiredStickers }).map((_, index) => (
