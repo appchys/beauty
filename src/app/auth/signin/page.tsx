@@ -77,6 +77,37 @@ export default function SignIn() {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Role Selector */}
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-3 text-center">
+                Tipo de usuario
+              </label>
+              <div className="flex rounded-lg border border-gray-300 p-1 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: 'client' })}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                    formData.role === 'client'
+                      ? 'bg-pink-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+                  }`}
+                >
+                  Cliente
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: 'admin' })}
+                  className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
+                    formData.role === 'admin'
+                      ? 'bg-pink-600 text-white shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-white'
+                  }`}
+                >
+                  Administrador
+                </button>
+              </div>
+            </div>
+
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email */}
               <div>
@@ -113,23 +144,6 @@ export default function SignIn() {
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     />
                   </div>
-                </div>
-              )}
-
-              {/* Role (solo en registro) */}
-              {isSignUp && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de cuenta
-                  </label>
-                  <select
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'client' })}
-                  >
-                    <option value="client">Cliente</option>
-                    <option value="admin">Administrador</option>
-                  </select>
                 </div>
               )}
 
