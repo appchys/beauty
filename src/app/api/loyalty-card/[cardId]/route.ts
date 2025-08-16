@@ -12,7 +12,7 @@ export async function GET(
       return NextResponse.json({ error: 'Loyalty card not found' }, { status: 404 });
     }
     return NextResponse.json({ card });
-  } catch (error) {
+  } catch {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

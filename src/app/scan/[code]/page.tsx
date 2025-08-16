@@ -3,9 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Star, CheckCircle, AlertCircle, Clock, QrCode, Trophy, Sparkles } from 'lucide-react';
+import { Star, CheckCircle, AlertCircle, Clock, Trophy, Sparkles } from 'lucide-react';
 import { QRCode as QRCodeBase, LoyaltyCard, Business } from '@/types';
 
 // Extiende QRCode para frontend con requiredStickers opcional
@@ -81,7 +79,7 @@ export default function ScanPage() {
         setFoundClient(null);
         setStep('name');
       }
-    } catch (e) {
+    } catch {
       setError('Error al verificar el celular');
     }
   };
@@ -121,7 +119,7 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (e) {
+    } catch {
       setError('Error al procesar el escaneo');
     } finally {
       setProcessing(false);
