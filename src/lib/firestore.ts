@@ -350,6 +350,11 @@ export async function addStickerToClientCard(clientId: string, cardId: string, q
     throw new Error('Loyalty card not found');
   }
   
+  // Verificar si la tarjeta ya está completa
+  if (clientCard.isCompleted || clientCard.currentStickers >= loyaltyCard.requiredStickers) {
+    throw new Error('Esta tarjeta ya está completa. No se pueden agregar más stickers.');
+  }
+  
   // Incrementar stickers
   const newStickerCount = clientCard.currentStickers + 1;
   const isCompleted = newStickerCount >= loyaltyCard.requiredStickers;

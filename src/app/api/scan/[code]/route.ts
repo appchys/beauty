@@ -96,16 +96,28 @@ export async function POST(
     }
 
     // Agregar sticker a la tarjeta del cliente
-    const updatedCard = await addStickerToClientCard(clientId as string, qrCode.cardId, qrCode.id);
+    try {
+      const updatedCard = await addStickerToClientCard(clientId as string, qrCode.cardId, qrCode.id);
 
-    return NextResponse.json({
-      success: true,
-      clientId,
-      clientCard: updatedCard,
-      message: updatedCard.isCompleted 
-        ? '¡Felicidades! Has completado tu tarjeta de fidelidad.' 
-        : `Sticker agregado. Tienes ${updatedCard.currentStickers} stickers.`
-    });
+      return NextResponse.json({
+        success: true,
+        clientId,
+        clientCard: updatedCard,
+        message: updatedCard.isCompleted 
+          ? '¡Felicidades! Has completado tu tarjeta de fidelidad.' 
+          : `Sticker agregado. Tienes ${updatedCard.currentStickers} stickers.`
+      });
+    } catch (error: unknown) {
+      // Si el error es que la tarjeta ya está completa, devolver mensaje específico
+      if (error instanceof Error && error.message && error.message.includes('ya está completa')) {
+        return NextResponse.json({ 
+          error: error.message,
+          isCardComplete: true 
+        }, { status: 400 });
+      }
+      // Re-lanzar otros errores
+      throw error;
+    }
   } catch (error) {
     console.error('Error processing scan:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
