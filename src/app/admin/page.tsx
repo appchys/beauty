@@ -3,7 +3,7 @@
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Plus, Users, TrendingUp, Star, Download } from 'lucide-react';
+import { QrCode, Plus, Users, TrendingUp, Star, Download, Loader2 } from 'lucide-react';
 import { LoyaltyCard, QRCode as QRCodeType } from '@/types';
 
 export default function AdminDashboard() {
@@ -18,6 +18,7 @@ export default function AdminDashboard() {
     scanUrl: string;
   } | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
+  const [generatingQR, setGeneratingQR] = useState<string | null>(null);
   
   // Form data para crear tarjeta
   const [cardForm, setCardForm] = useState({
@@ -48,8 +49,11 @@ export default function AdminDashboard() {
     }
   };
 
-  const generateQRCode = async () => {
-    if (!selectedCard) return;
+  const generateQRCode = async (cardId?: string) => {
+    const targetCardId = cardId || selectedCard;
+    if (!targetCardId) return;
+
+    setGeneratingQR(targetCardId);
 
     try {
       const response = await fetch('/api/qr', {
@@ -58,12 +62,13 @@ export default function AdminDashboard() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cardId: selectedCard,
+          cardId: targetCardId,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
+        setSelectedCard(targetCardId);
         setGeneratedQR({
           qrCodeImage: data.qrCodeImage,
           scanUrl: data.qrCode.code, // Usamos el código directamente del QR generado
@@ -75,6 +80,8 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error generating QR:', error);
+    } finally {
+      setGeneratingQR(null);
     }
   };
 
@@ -319,13 +326,21 @@ export default function AdminDashboard() {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setSelectedCard(card.id);
-                                  generateQRCode();
+                                  generateQRCode(card.id);
                                 }}
-                                className="w-12 h-12 bg-white bg-opacity-20 backdrop-blur-sm text-gray-800 rounded-full hover:bg-opacity-30 flex items-center justify-center transition-all border border-white border-opacity-40 hover:border-opacity-60 hover:scale-110"
-                                title="Generar QR"
+                                disabled={generatingQR === card.id}
+                                className={`w-12 h-12 backdrop-blur-sm text-gray-800 rounded-full flex items-center justify-center transition-all border border-white border-opacity-40 hover:border-opacity-60 ${
+                                  generatingQR === card.id
+                                    ? 'bg-gray-300 bg-opacity-50 cursor-not-allowed'
+                                    : 'bg-white bg-opacity-20 hover:bg-opacity-30 hover:scale-110'
+                                }`}
+                                title={generatingQR === card.id ? "Generando QR..." : "Generar QR"}
                               >
-                                <QrCode className="h-5 w-5" />
+                                {generatingQR === card.id ? (
+                                  <Loader2 className="h-5 w-5 animate-spin" />
+                                ) : (
+                                  <QrCode className="h-5 w-5" />
+                                )}
                               </button>
                               
                               {/* Botón para mostrar QR cuando ya está generado */}
