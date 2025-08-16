@@ -6,7 +6,7 @@ import { ClientProgress } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Star, Trophy, Clock, CheckCircle } from 'lucide-react';
+import { Star, Trophy, Clock, CheckCircle, Sparkles } from 'lucide-react';
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
@@ -96,7 +96,7 @@ export default function ClientDashboard() {
   const clientName = session?.user?.name || localClient?.name || 'Cliente';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-pink-100">
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-coral-50">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -122,8 +122,8 @@ export default function ClientDashboard() {
 
           <Card>
             <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mr-4">
-                <Clock className="h-6 w-6 text-blue-600" />
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mr-4">
+                <Clock className="h-6 w-6 text-orange-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{activeCards}</p>
@@ -134,8 +134,8 @@ export default function ClientDashboard() {
 
           <Card>
             <CardContent className="flex items-center p-6">
-              <div className="w-12 h-12 bg-pink-100 rounded-lg flex items-center justify-center mr-4">
-                <Star className="h-6 w-6 text-pink-600" />
+              <div className="w-12 h-12 bg-coral-100 rounded-lg flex items-center justify-center mr-4">
+                <Star className="h-6 w-6 text-coral-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-gray-900">{totalStickers}</p>
@@ -158,77 +158,104 @@ export default function ClientDashboard() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {progress.map((card) => (
-                <Card key={card.cardId} className="overflow-hidden relative bg-gradient-to-br from-pink-300 via-pink-50 to-pink-100 w-full aspect-[1.58] max-w-md mx-auto">
-                  <CardHeader className="p-6 pb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
+                <div key={card.cardId} className="space-y-4">
+                  {/* Tarjeta con proporciones de tarjeta de crédito - mismo diseño que admin */}
+                  <div 
+                    className="relative bg-gradient-to-br from-orange-200 via-coral-200 to-orange-300 rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
+                    style={{ 
+                      aspectRatio: '1.6',
+                      background: 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
+                    }}
+                  >
+                    {/* Patrón decorativo sutil */}
+                    <div className="absolute inset-0 opacity-10">
+                      <div className="absolute top-4 right-4 w-16 h-16 border-2 border-white rounded-full"></div>
+                      <div className="absolute bottom-4 left-4 w-12 h-12 border-2 border-white rounded-full"></div>
+                      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 border border-white rounded-full"></div>
+                    </div>
+                    
+                    {/* Contenido de la tarjeta */}
+                    <div className="relative h-full p-6 flex flex-col justify-between text-white">
+                      <div className="flex items-center space-x-3">
                         {/* Logo de la tienda */}
-                        <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden">
-                          <img
-                            src={card.storeLogo || '/globe.svg'}
-                            alt={`Logo de ${card.cardName}`}
-                            className="w-full h-full object-cover"
-                          />
+                        <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden flex-shrink-0 flex items-center justify-center beauty-icon">
+                          {card.storeLogo ? (
+                            <img
+                              src={card.storeLogo}
+                              alt={`Logo de ${card.storeName || 'Beauty Store'}`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Sparkles className="h-6 w-6 text-pink-400" strokeWidth={1.5} />
+                          )}
                         </div>
-                        <div>
-                          <CardTitle className="text-lg font-bold text-gray-800">{card.cardName}</CardTitle>
-                          <p className="text-sm text-gray-600">{card.storeName || 'Beauty Store'}</p>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold mb-1 text-shadow">{card.cardName}</h3>
+                          <p className="text-sm opacity-90">{card.storeName || 'Beauty Store'}</p>
                         </div>
                       </div>
-                      {card.isCompleted ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Completada
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-white">
-                          {card.currentStickers}/{card.requiredStickers}
-                        </Badge>
-                      )}
-                    </div>
-                  </CardHeader>
-                  
-                  <CardContent>
-                    <div className="space-y-4 relative">
-                      {/* Progress Bar */}
-                      <div>
-                        <div className="flex justify-between text-sm text-gray-600 mb-2">
-                          <span>Progreso</span>
-                          <span>{Math.round((card.currentStickers / card.requiredStickers) * 100)}%</span>
+                      
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">Progreso</span>
+                          <span className="text-sm font-bold">{card.currentStickers}/{card.requiredStickers}</span>
                         </div>
-                        <Progress 
-                          value={(card.currentStickers / card.requiredStickers) * 100} 
-                          className="h-2"
-                        />
-                      </div>
-
-                      {/* Stickers Visual */}
-                      <div className="grid grid-cols-5 gap-2">
-                        {Array.from({ length: card.requiredStickers }).map((_, index) => (
-                          <div
-                            key={index}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                              index < card.currentStickers
-                                ? 'bg-pink-600 text-white'
-                                : 'bg-gray-200 text-gray-400'
-                            }`}
-                          >
-                            <Star className="h-4 w-4" />
+                        
+                        {/* Stickers distribuidos en 2 filas iguales */}
+                        <div className="grid grid-cols-5 gap-2 max-w-[200px]">
+                          {Array.from({ length: Math.min(card.requiredStickers, 10) }).map((_, i) => (
+                            <div 
+                              key={i} 
+                              className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                                i < card.currentStickers 
+                                  ? 'sticker-completed border-pink-200 text-pink-700' 
+                                  : 'sticker-empty text-white text-opacity-60'
+                              }`}
+                            >
+                              <Star className={`h-3.5 w-3.5 ${i < card.currentStickers ? 'drop-shadow-sm' : ''}`} 
+                                    fill={i < card.currentStickers ? 'currentColor' : 'none'} />
+                            </div>
+                          ))}
+                          {card.requiredStickers > 10 && (
+                            <div className="col-span-5 text-center">
+                              <span className="text-xs font-medium opacity-90">+{card.requiredStickers - 10} más</span>
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="pt-2 border-t border-white border-opacity-30">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-xs font-medium opacity-90">
+                                {Math.round((card.currentStickers / card.requiredStickers) * 100)}% completado
+                              </p>
+                              {card.completedAt && (
+                                <p className="text-xs opacity-75 mt-1">
+                                  Completada el {new Date(card.completedAt).toLocaleDateString()}
+                                </p>
+                              )}
+                            </div>
+                            
+                            {/* Estado de la tarjeta */}
+                            {card.isCompleted ? (
+                              <div className="flex items-center text-xs font-medium bg-green-500 bg-opacity-90 px-3 py-1 rounded-full">
+                                <CheckCircle className="h-3 w-3 mr-1" />
+                                Completada
+                              </div>
+                            ) : (
+                              <div className="flex items-center text-xs font-medium bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                                <Clock className="h-3 w-3 mr-1" />
+                                En progreso
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
-
-                      {/* Completion Date */}
-                      {card.completedAt && (
-                        <div className="text-sm text-gray-600">
-                          Completada el {new Date(card.completedAt).toLocaleDateString()}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           )}

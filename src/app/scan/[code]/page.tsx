@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Star, CheckCircle, AlertCircle, Clock, QrCode, Trophy } from 'lucide-react';
+import { Star, CheckCircle, AlertCircle, Clock, QrCode, Trophy, Sparkles } from 'lucide-react';
 import { QRCode as QRCodeBase, LoyaltyCard, Business } from '@/types';
 
 // Extiende QRCode para frontend con requiredStickers opcional
@@ -385,7 +385,7 @@ export default function ScanPage() {
     // Usamos requiredStickers de meta si existe; si no, del clientCard; fallback 10
     const requiredStickers = successCardMeta?.requiredStickers ?? (card && typeof card.requiredStickers === 'number' ? card.requiredStickers : 10);
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-coral-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader className="pb-3 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-2" />
@@ -395,66 +395,100 @@ export default function ScanPage() {
           <CardContent>
             {card && (
               <div className="mb-6">
-                {/* Tarjeta estilo dashboard */}
-                <div className="overflow-hidden relative bg-gradient-to-br from-pink-300 via-pink-50 to-pink-100 w-full aspect-[1.58] max-w-md mx-auto rounded-xl shadow">
-                  <div className="p-6 pb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        {/* Logo */}
-                        <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden">
+                {/* Tarjeta con proporciones de tarjeta de crédito - mismo diseño coral */}
+                <div 
+                  className="relative bg-gradient-to-br from-orange-200 via-coral-200 to-orange-300 rounded-2xl shadow-xl overflow-hidden"
+                  style={{ 
+                    aspectRatio: '1.6',
+                    background: 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
+                  }}
+                >
+                  {/* Patrón decorativo sutil */}
+                  <div className="absolute inset-0 opacity-10">
+                    <div className="absolute top-4 right-4 w-16 h-16 border-2 border-white rounded-full"></div>
+                    <div className="absolute bottom-4 left-4 w-12 h-12 border-2 border-white rounded-full"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-20 h-20 border border-white rounded-full"></div>
+                  </div>
+                  
+                  {/* Contenido de la tarjeta */}
+                  <div className="relative h-full p-6 flex flex-col justify-between text-white">
+                    <div className="flex items-center space-x-3">
+                      {/* Logo de la tienda */}
+                      <div className="w-12 h-12 rounded-full bg-white shadow-md overflow-hidden flex-shrink-0 flex items-center justify-center beauty-icon">
+                        {successBusiness?.logoUrl ? (
                           <img
-                            src={successBusiness?.logoUrl || '/globe.svg'}
-                            alt={`Logo de ${successBusiness?.name || successCardMeta?.name || 'Tarjeta'}`}
+                            src={successBusiness.logoUrl}
+                            alt={`Logo de ${successBusiness?.name || 'Beauty Store'}`}
                             className="w-full h-full object-cover"
                           />
-                        </div>
-                        <div>
-                          <div className="text-lg font-bold text-gray-800">{successCardMeta?.name || 'Tarjeta de Fidelidad'}</div>
-                          <p className="text-sm text-gray-600">{successBusiness?.name || 'Beauty Store'}</p>
-                        </div>
+                        ) : (
+                          <Sparkles className="h-6 w-6 text-pink-400" strokeWidth={1.5} />
+                        )}
                       </div>
-                      {card.isCompleted ? (
-                        <Badge className="bg-green-100 text-green-800">
-                          <CheckCircle className="h-4 w-4 mr-1" />
-                          Completada
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-white">
-                          {card.currentStickers}/{requiredStickers}
-                        </Badge>
-                      )}
+                      <div className="flex-1">
+                        <h3 className="text-xl font-bold mb-1 text-shadow">{successCardMeta?.name || 'Tarjeta de Fidelidad'}</h3>
+                        <p className="text-sm opacity-90">{successBusiness?.name || 'Beauty Store'}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="px-6 pb-6">
-                    <div className="space-y-4 relative">
-                      {/* Progress */}
-                      <div>
-                        <div className="flex justify-between text-sm text-gray-600 mb-2">
-                          <span>Progreso</span>
-                          <span>{Math.round((card.currentStickers / requiredStickers) * 100)}%</span>
-                        </div>
-                        <Progress value={(card.currentStickers / requiredStickers) * 100} className="h-2" />
+                    
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium">Progreso</span>
+                        <span className="text-sm font-bold">{card.currentStickers}/{requiredStickers}</span>
                       </div>
-                      {/* Stickers */}
-                      <div className="grid grid-cols-5 gap-2">
-                        {Array.from({ length: requiredStickers }).map((_, index) => (
-                          <div
-                            key={index}
-                            className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                              index < card.currentStickers ? 'bg-pink-600 text-white' : 'bg-gray-200 text-gray-400'
+                      
+                      {/* Stickers distribuidos en 2 filas iguales */}
+                      <div className="grid grid-cols-5 gap-2 max-w-[200px]">
+                        {Array.from({ length: Math.min(requiredStickers, 10) }).map((_, i) => (
+                          <div 
+                            key={i} 
+                            className={`w-7 h-7 rounded-full border-2 flex items-center justify-center transition-all duration-300 ${
+                              i < card.currentStickers 
+                                ? 'sticker-completed border-pink-200 text-pink-700' 
+                                : 'sticker-empty text-white text-opacity-60'
                             }`}
                           >
-                            <Star className="h-4 w-4" />
+                            <Star className={`h-3.5 w-3.5 ${i < card.currentStickers ? 'drop-shadow-sm' : ''}`} 
+                                  fill={i < card.currentStickers ? 'currentColor' : 'none'} />
                           </div>
                         ))}
+                        {requiredStickers > 10 && (
+                          <div className="col-span-5 text-center">
+                            <span className="text-xs font-medium opacity-90">+{requiredStickers - 10} más</span>
+                          </div>
+                        )}
                       </div>
-                      {/* Completion msg */}
-                      {card.isCompleted && (
-                        <div className="text-sm text-gray-700 flex items-center">
-                          <Trophy className="h-4 w-4 mr-2" />
-                          ¡Tarjeta completa! Reclama tu recompensa.
+                      
+                      <div className="pt-2 border-t border-white border-opacity-30">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs font-medium opacity-90">
+                              {Math.round((card.currentStickers / requiredStickers) * 100)}% completado
+                            </p>
+                          </div>
+                          
+                          {/* Estado de la tarjeta */}
+                          {card.isCompleted ? (
+                            <div className="flex items-center text-xs font-medium bg-green-500 bg-opacity-90 px-3 py-1 rounded-full">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Completada
+                            </div>
+                          ) : (
+                            <div className="flex items-center text-xs font-medium bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                              <Clock className="h-3 w-3 mr-1" />
+                              En progreso
+                            </div>
+                          )}
                         </div>
-                      )}
+                        
+                        {/* Mensaje de recompensa */}
+                        {card.isCompleted && (
+                          <div className="mt-2 text-xs font-medium flex items-center bg-green-500 bg-opacity-20 px-2 py-1 rounded">
+                            <Trophy className="h-3 w-3 mr-1" />
+                            ¡Reclama tu recompensa!
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

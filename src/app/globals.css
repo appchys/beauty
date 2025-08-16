@@ -32,6 +32,18 @@ body {
 }
 
 /* Colores coral personalizados */
+.bg-coral-50 {
+  background-color: #fef7f5;
+}
+
+.bg-coral-100 {
+  background-color: #fed7cc;
+}
+
+.bg-coral-200 {
+  background-color: #fcb8a3;
+}
+
 .bg-coral-500 {
   background-color: #ff7f66;
 }
@@ -40,8 +52,45 @@ body {
   background-color: #ff6b4a;
 }
 
+.bg-coral-700 {
+  background-color: #ff5733;
+}
+
 .text-coral-500 {
   color: #ff7f66;
+}
+
+.text-coral-600 {
+  color: #ff6b4a;
+}
+
+.border-coral-200 {
+  border-color: #fcb8a3;
+}
+
+.from-coral-200 {
+  --tw-gradient-from: #fcb8a3 var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(252 184 163 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.via-coral-50 {
+  --tw-gradient-to: rgb(254 247 245 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), #fef7f5 var(--tw-gradient-via-position), var(--tw-gradient-to);
+}
+
+.to-coral-100 {
+  --tw-gradient-to: #fed7cc var(--tw-gradient-to-position);
+}
+
+.to-coral-50 {
+  --tw-gradient-to: #fef7f5 var(--tw-gradient-to-position);
+}
+
+.from-orange-50 {
+  --tw-gradient-from: #fff7ed var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(255 247 237 / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
 }
 
 .focus\:ring-coral-500:focus {
@@ -52,6 +101,10 @@ body {
   background-color: #ff6b4a;
 }
 
+.hover\:bg-coral-700:hover {
+  background-color: #ff5733;
+}
+
 /* Efectos adicionales para las tarjetas */
 .card-credit-ratio {
   aspect-ratio: 1.6;
@@ -60,4 +113,42 @@ body {
 .backdrop-blur-glass {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+}
+
+/* Efectos especiales para stickers */
+.sticker-completed {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%);
+  box-shadow: 0 2px 4px rgba(236, 72, 153, 0.3);
+  animation: pulse-gentle 2s ease-in-out infinite;
+}
+
+@keyframes pulse-gentle {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.sticker-empty {
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(4px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Mejoras para el diseño femenino */
+.beauty-shadow {
+  box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.1), 0 2px 4px -1px rgba(236, 72, 153, 0.06);
+}
+
+/* Ícono de belleza por defecto */
+.beauty-icon {
+  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+  transition: all 0.3s ease;
+}
+
+.beauty-icon:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 8px rgba(236, 72, 153, 0.2);
 }
