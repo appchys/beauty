@@ -432,8 +432,7 @@ export default function ScanPage() {
                     </div>
                     
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium">Progreso</span>
+                      <div className="flex items-center justify-end">
                         <span className="text-sm font-bold">{card.currentStickers}/{requiredStickers}</span>
                       </div>
                       
@@ -463,18 +462,18 @@ export default function ScanPage() {
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-xs font-medium opacity-90">
-                              {Math.round((card.currentStickers / requiredStickers) * 100)}% completado
+                              🎁 {successCardMeta?.rewardDescription || 'Premio especial'}
                             </p>
                           </div>
                           
                           {/* Estado de la tarjeta */}
                           {card.isCompleted ? (
-                            <div className="flex items-center text-xs font-medium bg-green-500 bg-opacity-90 px-3 py-1 rounded-full">
+                            <div className="flex items-center text-xs font-medium bg-green-500 text-white px-3 py-1 rounded-full">
                               <CheckCircle className="h-3 w-3 mr-1" />
                               Completada
                             </div>
                           ) : (
-                            <div className="flex items-center text-xs font-medium bg-white bg-opacity-20 px-3 py-1 rounded-full">
+                            <div className="flex items-center text-xs font-medium bg-white bg-opacity-90 text-gray-800 px-3 py-1 rounded-full">
                               <Clock className="h-3 w-3 mr-1" />
                               En progreso
                             </div>
