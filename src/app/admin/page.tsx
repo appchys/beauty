@@ -293,15 +293,16 @@ export default function AdminDashboard() {
                       <div className="relative h-full p-6 flex flex-col justify-between text-white">
                         <div>
                           <h3 className="text-xl font-bold mb-2 text-shadow">{card.name}</h3>
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="text-xs font-medium opacity-90">
+                              🎁 {card.rewardDescription}
+                            </p>
+                            <span className="text-xs font-bold">{card.requiredStickers} stickers</span>
+                          </div>
                           <p className="text-sm opacity-90 line-clamp-2">{card.description}</p>
                         </div>
                         
                         <div className="space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium">Progreso</span>
-                            <span className="text-sm font-bold">{card.requiredStickers} stickers</span>
-                          </div>
-                          
                           {/* Barra de progreso visual con círculos */}
                           <div className="flex space-x-1">
                             {Array.from({ length: Math.min(card.requiredStickers, 10) }).map((_, i) => (
@@ -316,10 +317,6 @@ export default function AdminDashboard() {
                           </div>
                           
                           <div className="pt-2 border-t border-white border-opacity-30">
-                            <p className="text-xs font-medium opacity-90 mb-3">
-                              🎁 {card.rewardDescription}
-                            </p>
-                            
                             {/* Botones redondos uno al lado del otro */}
                             <div className="flex space-x-3 justify-center">
                               {/* Botón de generar QR */}
