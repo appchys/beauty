@@ -4,12 +4,13 @@ import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Plus, Users, TrendingUp, Star, Download, Loader2 } from 'lucide-react';
-import { LoyaltyCard, QRCode as QRCodeType } from '@/types';
+import { LoyaltyCard, QRCode as QRCodeType, Business } from '@/types';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const [cards, setCards] = useState<LoyaltyCard[]>([]);
   const [qrCodes, setQRCodes] = useState<QRCodeType[]>([]);
+  const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateCard, setShowCreateCard] = useState(false);
   const [selectedCard, setSelectedCard] = useState('');
@@ -31,6 +32,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (session?.user?.role === 'admin') {
       fetchCards();
+      fetchBusinessProfile();
     }
   }, [session]);
 
@@ -46,6 +48,18 @@ export default function AdminDashboard() {
       console.error('Error fetching cards:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBusinessProfile = async () => {
+    try {
+      const response = await fetch('/api/admin/profile');
+      if (response.ok) {
+        const data = await response.json();
+        setBusiness(data.business);
+      }
+    } catch (error) {
+      console.error('Error fetching business profile:', error);
     }
   };
 
@@ -149,14 +163,25 @@ export default function AdminDashboard() {
         <div className="mb-8">
           <div className="flex justify-between items-center mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Panel de Administración 🎯
+              Panel de Administración
             </h1>
-            <button
+            <div 
               onClick={() => window.location.href = '/admin/profile'}
-              className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+              className="cursor-pointer group flex-shrink-0"
+              title="Editar perfil de tienda"
             >
-              Editar perfil de tienda
-            </button>
+              {business?.logoUrl ? (
+                <img
+                  src={business.logoUrl}
+                  alt="Logo de la tienda"
+                  className="w-12 h-12 min-w-12 min-h-12 rounded-full object-cover border-2 border-purple-200 group-hover:border-purple-400 transition-colors shadow-lg"
+                />
+              ) : (
+                <div className="w-12 h-12 min-w-12 min-h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg group-hover:bg-purple-700 transition-colors shadow-lg">
+                  {business?.name?.charAt(0)?.toUpperCase() || 'T'}
+                </div>
+              )}
+            </div>
           </div>
           <p className="text-gray-600">Gestiona tus tarjetas de fidelidad y genera códigos QR únicos</p>
         </div>
@@ -165,7 +190,7 @@ export default function AdminDashboard() {
         {showCreateCard && (
           <Card className="mb-8">
             <CardHeader>
-              <CardTitle className="flex items-center">
+              <CardTitle className="flex items-center font-sans">
                 <Star className="h-6 w-6 mr-2" />
                 Crear Nueva Tarjeta de Fidelidad
               </CardTitle>
@@ -249,17 +274,17 @@ export default function AdminDashboard() {
         {/* Lista de Tarjetas */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className="flex items-center justify-between font-sans">
               <div className="flex items-center">
                 <Star className="h-6 w-6 mr-2" />
                 Tarjetas de Fidelidad Activas
               </div>
               <button
                 onClick={() => setShowCreateCard(!showCreateCard)}
-                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+                className="w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 rounded-full flex items-center justify-center transition-colors shadow-sm hover:shadow-md"
+                title="Nueva tarjeta"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Tarjeta
+                <Plus className="h-5 w-5" />
               </button>
             </CardTitle>
           </CardHeader>
@@ -268,7 +293,7 @@ export default function AdminDashboard() {
               {cards.length === 0 ? (
                 <div className="text-center py-8 col-span-full">
                   <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay tarjetas aún</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2 font-sans">No hay tarjetas aún</h3>
                   <p className="text-gray-600">Crea tu primera tarjeta de fidelidad para comenzar</p>
                 </div>
               ) : (
@@ -375,7 +400,7 @@ export default function AdminDashboard() {
                       <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-lg p-6 max-w-sm w-full">
                           <div className="text-center space-y-4">
-                            <h3 className="text-xl font-semibold text-gray-900">Código QR Generado</h3>
+                            <h3 className="text-xl font-semibold text-gray-900 font-sans">Código QR Generado</h3>
                             <div className="bg-white p-4 rounded-lg shadow-sm">
                               <img
                                 src={generatedQR.qrCodeImage}
@@ -462,7 +487,7 @@ export default function AdminDashboard() {
         {/* Estadísticas - Movido después de las tarjetas */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle className="flex items-center text-lg">
+            <CardTitle className="flex items-center text-lg font-sans">
               <TrendingUp className="h-5 w-5 mr-2" />
               Estadísticas Generales
             </CardTitle>
@@ -515,13 +540,13 @@ export default function AdminDashboard() {
         {/* Códigos QR Generados */}
         <Card className="mt-8">
           <CardHeader>
-            <CardTitle>Códigos QR Generados</CardTitle>
+            <CardTitle className="font-sans">Códigos QR Generados</CardTitle>
           </CardHeader>
           <CardContent>
             {qrCodes.length === 0 ? (
               <div className="text-center py-8">
                 <QrCode className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay códigos QR generados</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-2 font-sans">No hay códigos QR generados</h3>
                 <p className="text-gray-600">Genera tu primer código QR para comenzar</p>
               </div>
             ) : (
