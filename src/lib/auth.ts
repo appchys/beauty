@@ -1,6 +1,21 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { createUser, getUserByEmail } from '@/lib/firestore';
+import bcrypt from 'bcryptjs';
+import { createUser, getUserByEmail, getUserByPhone } from '@/lib/firestore';
+
+// Helper function para detectar si el input es email o teléfono
+function isEmail(input: string): boolean {
+  return input.includes('@') && input.includes('.');
+}
+
+// Helper function para obtener usuario por email o teléfono
+async function getUserByEmailOrPhone(input: string) {
+  if (isEmail(input)) {
+    return await getUserByEmail(input);
+  } else {
+    return await getUserByPhone(input);
+  }
+}
 
 export const authOptions: NextAuthOptions = {
   secret: 'beauty-secret-2024', // Hardcoded para debugging
@@ -8,9 +23,10 @@ export const authOptions: NextAuthOptions = {
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
+        email: { label: 'Email o Celular', type: 'text' },
         password: { label: 'Password', type: 'password' },
         name: { label: 'Name', type: 'text' },
+        phone: { label: 'Phone', type: 'text' },
         role: { label: 'Role', type: 'text' },
         action: { label: 'Action', type: 'text' },
       },
@@ -29,6 +45,7 @@ export const authOptions: NextAuthOptions = {
             console.log('Registrando usuario:', { 
               email: credentials.email, 
               name: credentials.name, 
+              phone: credentials.phone,
               role: credentials.role 
             });
 
@@ -39,10 +56,15 @@ export const authOptions: NextAuthOptions = {
               return null;
             }
 
+            // Hashear la contraseña
+            const hashedPassword = await bcrypt.hash(credentials.password, 12);
+
             // Crear usuario en Firestore
             const newUser = await createUser({
               email: credentials.email,
               name: credentials.name,
+              phone: credentials.phone,
+              password: hashedPassword,
               role: credentials.role as 'admin' | 'client',
             });
 
@@ -76,19 +98,25 @@ export const authOptions: NextAuthOptions = {
             // LOGIN: Verificar usuario existente
             console.log('Iniciando sesión:', credentials.email);
             
-            // Obtener datos del usuario desde Firestore
-            const user = await getUserByEmail(credentials.email);
-            if (!user) {
-              console.log('Usuario no encontrado en Firestore');
+            // Obtener datos del usuario desde Firestore (por email o teléfono)
+            const user = await getUserByEmailOrPhone(credentials.email);
+            if (!user || !user.password) {
+              console.log('Usuario no encontrado en Firestore o sin contraseña');
               return null;
             }
 
             console.log('Usuario encontrado:', user);
 
-            // Por ahora, aceptamos cualquier contraseña para demostración
+            // Verificar la contraseña
+            const isValidPassword = await bcrypt.compare(credentials.password, user.password);
+            if (!isValidPassword) {
+              console.log('Contraseña incorrecta');
+              return null;
+            }
+
             return {
               id: user.id,
-              email: user.email,
+              email: user.email || user.phone, // Devolver email si existe, sino el teléfono
               name: user.name,
               role: user.role,
             };

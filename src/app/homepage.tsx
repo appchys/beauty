@@ -61,7 +61,7 @@ export default function Home() {
                     Iniciar Sesión
                   </button>
                   <button
-                    onClick={() => router.push('/auth/register')}
+                    onClick={() => router.push('/auth/signin?mode=signup')}
                     className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
                   >
                     Registrarse
@@ -88,7 +88,7 @@ export default function Home() {
           {!session && (
             <div className="space-x-4">
               <button
-                onClick={() => router.push('/auth/register')}
+                onClick={() => router.push('/auth/signin?mode=signup')}
                 className="bg-purple-600 text-white px-8 py-3 rounded-lg hover:bg-purple-700 text-lg"
               >
                 Comenzar Gratis

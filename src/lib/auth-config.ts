@@ -11,6 +11,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
         name: { label: 'Name', type: 'text' },
+        phone: { label: 'Phone', type: 'text' },
         role: { label: 'Role', type: 'text' },
         action: { label: 'Action', type: 'text' },
       },
@@ -22,6 +23,8 @@ export const authOptions: NextAuthOptions = {
         try {
           if (credentials.action === 'signup') {
             // Registro de nuevo usuario
+            console.log('auth-config - credentials recibidas:', credentials);
+            
             if (!credentials.name || !credentials.role) {
               return null;
             }
@@ -34,12 +37,20 @@ export const authOptions: NextAuthOptions = {
 
             // Crear nuevo usuario
             const hashedPassword = await bcrypt.hash(credentials.password, 12);
-            const newUser = await createUser({
+            
+            const userDataToCreate = {
               email: credentials.email,
               name: credentials.name,
+              phone: credentials.phone || undefined, // Asegurar que no sea string vacío
               password: hashedPassword,
               role: credentials.role as 'admin' | 'client',
-            });
+            };
+            
+            console.log('auth-config - datos que se van a enviar a createUser:', userDataToCreate);
+            console.log('auth-config - phone value:', credentials.phone);
+            console.log('auth-config - password value:', hashedPassword);
+            
+            const newUser = await createUser(userDataToCreate);
 
             // Si es admin, crear también el negocio
             if (credentials.role === 'admin') {

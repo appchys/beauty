@@ -26,6 +26,8 @@ import {
 
 // User functions
 export async function createUser(userData: Omit<User, 'id' | 'createdAt' | 'updatedAt'>): Promise<User> {
+  console.log('createUser - userData recibida:', userData);
+  
   const userId = uuidv4();
   const now = new Date();
   
@@ -36,11 +38,17 @@ export async function createUser(userData: Omit<User, 'id' | 'createdAt' | 'upda
     updatedAt: now,
   };
   
-  await setDoc(doc(db, 'users', userId), {
+  console.log('createUser - user completo antes de guardar:', user);
+  
+  const firestoreData = {
     ...user,
     createdAt: Timestamp.fromDate(now),
     updatedAt: Timestamp.fromDate(now),
-  });
+  };
+  
+  console.log('createUser - datos que se van a guardar en Firestore:', firestoreData);
+  
+  await setDoc(doc(db, 'users', userId), firestoreData);
   
   return user;
 }
