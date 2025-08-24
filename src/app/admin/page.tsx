@@ -25,7 +25,7 @@ export default function AdminDashboard() {
   const [cardForm, setCardForm] = useState({
     name: '',
     description: '',
-    requiredStickers: 10,
+    requiredStickers: '10', // Cambiar a string para permitir edición
     rewardDescription: '',
   });
 
@@ -101,12 +101,24 @@ export default function AdminDashboard() {
 
   const createCard = async () => {
     try {
+      // Validar que requiredStickers sea un número válido
+      const requiredStickers = parseInt(cardForm.requiredStickers);
+      if (isNaN(requiredStickers) || requiredStickers < 1 || requiredStickers > 20) {
+        alert('Los stickers requeridos deben ser un número entre 1 y 20');
+        return;
+      }
+
+      const cardData = {
+        ...cardForm,
+        requiredStickers: requiredStickers
+      };
+
       const response = await fetch('/api/admin/cards', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(cardForm),
+        body: JSON.stringify(cardData),
       });
 
       if (response.ok) {
@@ -116,7 +128,7 @@ export default function AdminDashboard() {
         setCardForm({
           name: '',
           description: '',
-          requiredStickers: 10,
+          requiredStickers: '10',
           rewardDescription: '',
         });
       }
@@ -218,10 +230,26 @@ export default function AdminDashboard() {
                     type="number"
                     min="1"
                     max="20"
+                    placeholder="Ej: 10"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     value={cardForm.requiredStickers}
-                    onChange={(e) => setCardForm({ ...cardForm, requiredStickers: parseInt(e.target.value) || 10 })}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      // Permitir campo vacío para edición, pero validar que sea número válido
+                      if (value === '' || (/^\d+$/.test(value) && parseInt(value) >= 1 && parseInt(value) <= 20)) {
+                        setCardForm({ ...cardForm, requiredStickers: value });
+                      }
+                    }}
+                    onBlur={(e) => {
+                      // Si el campo está vacío al perder el foco, restaurar el valor por defecto
+                      if (e.target.value === '') {
+                        setCardForm({ ...cardForm, requiredStickers: '10' });
+                      }
+                    }}
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Número de stickers que el cliente necesita para completar la tarjeta (1-20)
+                  </p>
                 </div>
                 
                 <div className="md:col-span-2">
