@@ -14,6 +14,21 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [localClient, setLocalClient] = useState<{ id: string; name: string } | null>(null);
 
+  // Función helper para generar gradiente basado en color
+  const generateCardGradient = (color: string) => {
+    if (!color) return 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)';
+    
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    const lighter = `rgb(${Math.min(255, r + 30)}, ${Math.min(255, g + 30)}, ${Math.min(255, b + 30)})`;
+    const darker = `rgb(${Math.max(0, r - 30)}, ${Math.max(0, g - 30)}, ${Math.max(0, b - 30)})`;
+    
+    return `linear-gradient(135deg, ${lighter} 0%, ${color} 50%, ${darker} 100%)`;
+  };
+
   // Detectar cliente localStorage
   useEffect(() => {
     const saved = localStorage.getItem('beautyClient');
@@ -163,10 +178,10 @@ export default function ClientDashboard() {
                 <div key={card.cardId} className="space-y-4">
                   {/* Tarjeta con proporciones de tarjeta de crédito - mismo diseño que admin */}
                   <div 
-                    className="relative bg-gradient-to-br from-orange-200 via-coral-200 to-orange-300 rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
+                    className="relative rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
                     style={{ 
                       aspectRatio: '1.6',
-                      background: 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
+                      background: card.color ? generateCardGradient(card.color) : 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
                     }}
                   >
                     {/* Patrón decorativo sutil */}

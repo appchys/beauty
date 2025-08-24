@@ -20,6 +20,21 @@ export default function AdminDashboard() {
   } | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [generatingQR, setGeneratingQR] = useState<string | null>(null);
+
+  // Función helper para generar gradiente basado en color
+  const generateCardGradient = (color: string) => {
+    // Convertir hex a hsl para crear variaciones
+    const hex = color.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Crear versiones más claras y más oscuras
+    const lighter = `rgb(${Math.min(255, r + 30)}, ${Math.min(255, g + 30)}, ${Math.min(255, b + 30)})`;
+    const darker = `rgb(${Math.max(0, r - 30)}, ${Math.max(0, g - 30)}, ${Math.max(0, b - 30)})`;
+    
+    return `linear-gradient(135deg, ${lighter} 0%, ${color} 50%, ${darker} 100%)`;
+  };
   
   // Form data para crear tarjeta
   const [cardForm, setCardForm] = useState({
@@ -27,6 +42,7 @@ export default function AdminDashboard() {
     description: '',
     requiredStickers: '10', // Cambiar a string para permitir edición
     rewardDescription: '',
+    color: '#ff6b9d', // Color por defecto (rosa)
   });
 
   useEffect(() => {
@@ -130,6 +146,7 @@ export default function AdminDashboard() {
           description: '',
           requiredStickers: '10',
           rewardDescription: '',
+          color: '#ff6b9d',
         });
       }
     } catch (error) {
@@ -277,6 +294,35 @@ export default function AdminDashboard() {
                     onChange={(e) => setCardForm({ ...cardForm, rewardDescription: e.target.value })}
                   />
                 </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Color de la Tarjeta
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <input
+                      type="color"
+                      className="w-12 h-10 border border-gray-300 rounded-lg cursor-pointer"
+                      value={cardForm.color}
+                      onChange={(e) => setCardForm({ ...cardForm, color: e.target.value })}
+                    />
+                    <div className="flex space-x-2">
+                      {/* Colores predefinidos */}
+                      {['#ff6b9d', '#4facfe', '#43e97b', '#fa709a', '#ffeaa7', '#6c5ce7', '#fd79a8', '#00b894'].map((color) => (
+                        <button
+                          key={color}
+                          type="button"
+                          className={`w-8 h-8 rounded-full border-2 ${cardForm.color === color ? 'border-gray-800' : 'border-gray-300'} hover:border-gray-600`}
+                          style={{ backgroundColor: color }}
+                          onClick={() => setCardForm({ ...cardForm, color })}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Selecciona un color personalizado o elige uno de los predefinidos
+                  </p>
+                </div>
                 
                 <div className="md:col-span-2 flex space-x-3">
                   <button
@@ -329,10 +375,10 @@ export default function AdminDashboard() {
                   <div key={card.id} className="space-y-4">
                     {/* Tarjeta con proporciones de tarjeta de crédito */}
                     <div 
-                      className="relative bg-gradient-to-br from-orange-200 via-coral-200 to-orange-300 rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
+                      className="relative rounded-2xl shadow-xl overflow-hidden cursor-pointer transform transition-transform hover:scale-105"
                       style={{ 
                         aspectRatio: '1.6',
-                        background: 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
+                        background: card.color ? generateCardGradient(card.color) : 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
                       }}
                     >
                       {/* Patrón decorativo sutil */}

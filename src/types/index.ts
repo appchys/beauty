@@ -31,6 +31,7 @@ export interface LoyaltyCard {
   description?: string;
   requiredStickers: number;
   rewardDescription: string;
+  color?: string; // Color personalizado para la tarjeta (hex, ej: #ff6b9d)
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
@@ -57,6 +58,7 @@ export interface ClientProgress {
   isCompleted: boolean;
   rewardDescription: string;
   completedAt?: Date;
+  color?: string;
 }
 
 export interface QRCode {

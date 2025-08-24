@@ -8,6 +8,54 @@ import { Badge } from '@/components/ui/badge';
 import { Star, CheckCircle, AlertCircle, Clock, QrCode, Trophy, Sparkles } from 'lucide-react';
 import { QRCode as QRCodeBase, LoyaltyCard, Business } from '@/types';
 
+// Función para generar gradiente basado en color
+function generateCardGradient(color: string): string {
+  // Función para convertir hex a HSL
+  function hexToHsl(hex: string): [number, number, number] {
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0;
+    const l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      switch (max) {
+        case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+        case g: h = (b - r) / d + 2; break;
+        case b: h = (r - g) / d + 4; break;
+      }
+      h /= 6;
+    }
+
+    return [h * 360, s * 100, l * 100];
+  }
+
+  // Función para convertir HSL a hex
+  function hslToHex(h: number, s: number, l: number): string {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = (n: number) => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');
+    };
+    return `#${f(0)}${f(8)}${f(4)}`;
+  }
+
+  const [h, s, l] = hexToHsl(color);
+  
+  // Crear variaciones más claras y más oscuras
+  const lightColor = hslToHex(h, Math.max(0, s - 20), Math.min(100, l + 15));
+  const darkColor = hslToHex(h, Math.min(100, s + 10), Math.max(0, l - 20));
+  
+  return `linear-gradient(135deg, ${lightColor} 0%, ${color} 50%, ${darkColor} 100%)`;
+}
+
 // Extiende QRCode para frontend con requiredStickers opcional
 type QRCode = QRCodeBase & { requiredStickers?: number };
 // Helper to fetch LoyaltyCard by ID
@@ -400,7 +448,9 @@ export default function ScanPage() {
                   className="relative bg-gradient-to-br from-orange-200 via-coral-200 to-orange-300 rounded-2xl shadow-xl overflow-hidden"
                   style={{ 
                     aspectRatio: '1.6',
-                    background: 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
+                    background: successCardMeta?.color 
+                      ? generateCardGradient(successCardMeta.color) 
+                      : 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
                   }}
                 >
                   {/* Patrón decorativo sutil */}

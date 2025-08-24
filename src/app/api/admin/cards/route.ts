@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { name, description, requiredStickers, rewardDescription } = await request.json();
+    const { name, description, requiredStickers, rewardDescription, color } = await request.json();
 
     if (!name || !requiredStickers || !rewardDescription) {
       return NextResponse.json({ 
@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       requiredStickers: parseInt(requiredStickers),
       rewardDescription,
       isActive: true,
+      color: color || undefined,
     });
 
     return NextResponse.json({ card });

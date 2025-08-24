@@ -441,6 +441,7 @@ export async function getClientProgress(clientId: string): Promise<ClientProgres
         storeLogo: business?.logoUrl,
         rewardDescription: loyaltyCard.rewardDescription,
         completedAt: clientCardData.completedAt?.toDate(),
+        color: loyaltyCard.color,
       });
     }
   }
