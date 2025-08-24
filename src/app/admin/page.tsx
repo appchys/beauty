@@ -20,6 +20,10 @@ export default function AdminDashboard() {
   } | null>(null);
   const [showQRModal, setShowQRModal] = useState(false);
   const [generatingQR, setGeneratingQR] = useState<string | null>(null);
+  const [showClientsModal, setShowClientsModal] = useState(false);
+  const [selectedCardForClients, setSelectedCardForClients] = useState<LoyaltyCard | null>(null);
+  const [cardClients, setCardClients] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
 
   // Función helper para generar gradiente basado en color
   const generateCardGradient = (color: string) => {
@@ -77,6 +81,31 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error fetching business profile:', error);
     }
+  };
+
+  const fetchCardClients = async (cardId: string) => {
+    setLoadingClients(true);
+    try {
+      const response = await fetch(`/api/admin/cards/${cardId}/clients`);
+      if (response.ok) {
+        const data = await response.json();
+        setCardClients(data.clients || []);
+      } else {
+        console.error('Error fetching card clients');
+        setCardClients([]);
+      }
+    } catch (error) {
+      console.error('Error fetching card clients:', error);
+      setCardClients([]);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  const handleCardClick = (card: LoyaltyCard) => {
+    setSelectedCardForClients(card);
+    setShowClientsModal(true);
+    fetchCardClients(card.id);
   };
 
   const generateQRCode = async (cardId?: string) => {
@@ -380,6 +409,7 @@ export default function AdminDashboard() {
                         aspectRatio: '1.6',
                         background: card.color ? generateCardGradient(card.color) : 'linear-gradient(135deg, #ffd7cc 0%, #ffb3a0 50%, #ff9980 100%)'
                       }}
+                      onClick={() => handleCardClick(card)}
                     >
                       {/* Patrón decorativo sutil */}
                       <div className="absolute inset-0 opacity-10">
@@ -664,6 +694,110 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Modal de clientes de la tarjeta */}
+      {showClientsModal && selectedCardForClients && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">Clientes de la Tarjeta</h2>
+                  <p className="text-gray-600 mt-1">{selectedCardForClients.name}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowClientsModal(false);
+                    setSelectedCardForClients(null);
+                    setCardClients([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              {loadingClients ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                  <span className="ml-2 text-gray-600">Cargando clientes...</span>
+                </div>
+              ) : cardClients.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay clientes aún</h3>
+                  <p className="text-gray-600">Aún no hay clientes que hayan usado esta tarjeta</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <p className="text-sm text-gray-600">
+                      Total de clientes: <span className="font-semibold">{cardClients.length}</span>
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Tarjetas completadas: <span className="font-semibold">{cardClients.filter(c => c.isCompleted).length}</span>
+                    </p>
+                  </div>
+                  
+                  <div className="grid gap-4">
+                    {cardClients.map((client) => (
+                      <div key={client.id} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <h3 className="font-semibold text-gray-900">{client.name}</h3>
+                              {client.isCompleted && (
+                                <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center">
+                                  <Star className="w-3 h-3 mr-1" />
+                                  Completada
+                                </span>
+                              )}
+                            </div>
+                            <div className="space-y-1 text-sm text-gray-600">
+                              <p><span className="font-medium">Teléfono:</span> {client.phone}</p>
+                              {client.email && (
+                                <p><span className="font-medium">Email:</span> {client.email}</p>
+                              )}
+                              <p><span className="font-medium">Se unió:</span> {new Date(client.createdAt).toLocaleDateString()}</p>
+                              {client.isCompleted && client.completedAt && (
+                                <p><span className="font-medium">Completó:</span> {new Date(client.completedAt).toLocaleDateString()}</p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="text-right">
+                            <div className="flex items-center justify-end space-x-2 mb-2">
+                              <span className="text-2xl font-bold text-purple-600">{client.currentStickers}</span>
+                              <span className="text-sm text-gray-500">/ {selectedCardForClients.requiredStickers}</span>
+                            </div>
+                            
+                            <div className="w-24 bg-gray-200 rounded-full h-2">
+                              <div 
+                                className="bg-purple-600 h-2 rounded-full transition-all duration-300"
+                                style={{ 
+                                  width: `${Math.min(100, (client.currentStickers / selectedCardForClients.requiredStickers) * 100)}%` 
+                                }}
+                              ></div>
+                            </div>
+                            
+                            <p className="text-xs text-gray-500 mt-1">
+                              {Math.round((client.currentStickers / selectedCardForClients.requiredStickers) * 100)}%
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

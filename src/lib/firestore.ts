@@ -544,3 +544,51 @@ export async function getCardStickerStatistics(cardId: string): Promise<{ [stick
     return {};
   }
 }
+
+// Función para obtener clientes que tienen una tarjeta específica
+export async function getClientCardsByCardId(cardId: string) {
+  try {
+    // Obtener todas las tarjetas de cliente para esta tarjeta de fidelidad
+    const q = query(
+      collection(db, 'clientCards'),
+      where('cardId', '==', cardId)
+    );
+    const querySnapshot = await getDocs(q);
+    
+    const clients: any[] = [];
+    
+    for (const clientCardDoc of querySnapshot.docs) {
+      const clientCardData = clientCardDoc.data();
+      
+      // Obtener información del cliente
+      const clientDoc = await getDoc(doc(db, 'users', clientCardData.clientId));
+      if (clientDoc.exists()) {
+        const clientData = clientDoc.data();
+        
+        clients.push({
+          id: clientData.id,
+          name: clientData.name,
+          phone: clientData.phone,
+          email: clientData.email,
+          currentStickers: clientCardData.currentStickers,
+          isCompleted: clientCardData.isCompleted,
+          completedAt: clientCardData.completedAt?.toDate(),
+          createdAt: clientCardData.createdAt?.toDate(),
+        });
+      }
+    }
+    
+    // Ordenar por número de stickers (descendente) y luego por fecha de creación
+    clients.sort((a, b) => {
+      if (a.currentStickers !== b.currentStickers) {
+        return b.currentStickers - a.currentStickers;
+      }
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+    
+    return clients;
+  } catch (error) {
+    console.error('Error getting clients by card ID:', error);
+    return [];
+  }
+}
