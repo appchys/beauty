@@ -3,10 +3,8 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { ClientProgress } from '@/types';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
-import { Star, Trophy, Clock, CheckCircle, Sparkles, User, Edit, X, Camera, Upload } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Star, Trophy, Clock, CheckCircle, Sparkles, User, X, Camera } from 'lucide-react';
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();

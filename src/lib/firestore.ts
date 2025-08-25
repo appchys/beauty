@@ -18,6 +18,7 @@ import {
   Business, 
   LoyaltyCard, 
   ClientCard, 
+  ClientWithCardInfo,
   QRCode, 
   StickerScan,
   DashboardStats,
@@ -546,7 +547,7 @@ export async function getCardStickerStatistics(cardId: string): Promise<{ [stick
 }
 
 // Función para obtener clientes que tienen una tarjeta específica
-export async function getClientCardsByCardId(cardId: string) {
+export async function getClientCardsByCardId(cardId: string): Promise<ClientWithCardInfo[]> {
   try {
     // Obtener todas las tarjetas de cliente para esta tarjeta de fidelidad
     const q = query(
@@ -555,7 +556,7 @@ export async function getClientCardsByCardId(cardId: string) {
     );
     const querySnapshot = await getDocs(q);
     
-    const clients: any[] = [];
+    const clients: ClientWithCardInfo[] = [];
     
     for (const clientCardDoc of querySnapshot.docs) {
       const clientCardData = clientCardDoc.data();
@@ -605,7 +606,7 @@ export async function updateUserProfile(userId: string, updates: {
     const userRef = doc(db, 'users', userId);
     
     // Preparar los datos de actualización
-    const updateData: any = {
+    const updateData: Record<string, any> = {
       updatedAt: new Date(),
     };
     

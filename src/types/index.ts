@@ -49,6 +49,18 @@ export interface ClientCard {
   updatedAt: Date;
 }
 
+export interface ClientWithCardInfo {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  profileImage?: string;
+  currentStickers: number;
+  isCompleted: boolean;
+  completedAt?: Date;
+  createdAt: Date;
+}
+
 export interface ClientProgress {
   cardId: string;
   cardName: string;

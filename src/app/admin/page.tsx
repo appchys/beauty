@@ -4,7 +4,7 @@ import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Plus, Users, TrendingUp, Star, Download, Loader2 } from 'lucide-react';
-import { LoyaltyCard, QRCode as QRCodeType, Business } from '@/types';
+import { LoyaltyCard, QRCode as QRCodeType, Business, ClientWithCardInfo } from '@/types';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -22,7 +22,7 @@ export default function AdminDashboard() {
   const [generatingQR, setGeneratingQR] = useState<string | null>(null);
   const [showClientsModal, setShowClientsModal] = useState(false);
   const [selectedCardForClients, setSelectedCardForClients] = useState<LoyaltyCard | null>(null);
-  const [cardClients, setCardClients] = useState<any[]>([]);
+  const [cardClients, setCardClients] = useState<ClientWithCardInfo[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
 
   // Función helper para generar gradiente basado en color

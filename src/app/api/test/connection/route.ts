@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export async function GET(request: NextRequest) {
+export async function GET(_: NextRequest) {
   try {
     console.log('🔍 Probando conexión a Firestore...');
     
