@@ -1,5 +1,6 @@
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 
 // Lazy initialization to avoid running during Next.js build-time evaluation
 export function getAdminApp(): App {
@@ -29,4 +30,8 @@ export function getAdminApp(): App {
 
 export function getAdminDb(): Firestore {
   return getFirestore(getAdminApp());
+}
+
+export function getAdminStorage() {
+  return getStorage(getAdminApp());
 }

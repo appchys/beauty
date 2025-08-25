@@ -6,6 +6,7 @@ export interface User {
   password?: string; // Hacer password opcional
   businessId?: string; // Solo para admins
   phone?: string;
+  profileImage?: string; // URL o base64 de la imagen de perfil
   createdAt: Date;
   updatedAt: Date;
 }

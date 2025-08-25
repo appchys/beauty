@@ -592,3 +592,44 @@ export async function getClientCardsByCardId(cardId: string) {
     return [];
   }
 }
+
+// Función para actualizar el perfil de un usuario
+export async function updateUserProfile(userId: string, updates: {
+  name?: string;
+  phone?: string;
+  email?: string;
+  profileImage?: string;
+}) {
+  try {
+    const userRef = doc(db, 'users', userId);
+    
+    // Preparar los datos de actualización
+    const updateData: any = {
+      updatedAt: new Date(),
+    };
+    
+    if (updates.name !== undefined) {
+      updateData.name = updates.name;
+    }
+    
+    if (updates.phone !== undefined) {
+      updateData.phone = updates.phone;
+    }
+    
+    if (updates.email !== undefined) {
+      updateData.email = updates.email;
+    }
+    
+    if (updates.profileImage !== undefined) {
+      updateData.profileImage = updates.profileImage;
+    }
+    
+    // Actualizar el documento
+    await updateDoc(userRef, updateData);
+    
+    return true;
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+}
