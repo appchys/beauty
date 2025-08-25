@@ -606,7 +606,13 @@ export async function updateUserProfile(userId: string, updates: {
     const userRef = doc(db, 'users', userId);
     
     // Preparar los datos de actualización
-    const updateData: Record<string, any> = {
+    const updateData: {
+      updatedAt: Date;
+      name?: string;
+      phone?: string;
+      email?: string;
+      profileImage?: string;
+    } = {
       updatedAt: new Date(),
     };
     

@@ -162,7 +162,7 @@ function SignInForm() {
           }
         }
       }
-    } catch (_) {
+    } catch {
       setError('Ocurrió un error inesperado');
     } finally {
       setIsLoading(false);

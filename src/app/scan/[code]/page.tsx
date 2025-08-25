@@ -127,7 +127,7 @@ export default function ScanPage() {
         setFoundClient(null);
         setStep('name');
       }
-    } catch (_) {
+    } catch {
       setError('Error al verificar el celular');
     }
   };
@@ -167,7 +167,7 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (_) {
+    } catch {
       setError('Error al procesar el escaneo');
     } finally {
       setProcessing(false);
@@ -218,7 +218,7 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (_) {
+    } catch {
       setError('Error al validar el código QR');
     } finally {
       setLoading(false);
@@ -380,7 +380,7 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (_) {
+    } catch {
       setError('Error al procesar el registro');
     } finally {
       setProcessing(false);
