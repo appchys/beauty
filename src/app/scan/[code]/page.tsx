@@ -258,7 +258,7 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (error) {
+    } catch (_) {
       setError('Error al procesar el escaneo');
     } finally {
       setProcessing(false);
@@ -297,7 +297,7 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (error) {
+    } catch (_) {
       setError('Error al procesar el escaneo');
     } finally {
       setProcessing(false);

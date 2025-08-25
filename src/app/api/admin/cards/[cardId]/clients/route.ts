@@ -5,7 +5,7 @@ import { getClientCardsByCardId } from '@/lib/firestore';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { cardId: string } }
+  { params }: { params: Promise<{ cardId: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions);

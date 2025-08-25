@@ -166,7 +166,7 @@ export default function ClientDashboard() {
       });
 
       if (response.ok) {
-        const data = await response.json();
+        await response.json();
         
         // Actualizar localStorage si es cliente local
         if (localClient) {
