@@ -570,6 +570,7 @@ export async function getClientCardsByCardId(cardId: string) {
           name: clientData.name,
           phone: clientData.phone,
           email: clientData.email,
+          profileImage: clientData.profileImage, // Agregar profileImage
           currentStickers: clientCardData.currentStickers,
           isCompleted: clientCardData.isCompleted,
           completedAt: clientCardData.completedAt?.toDate(),
