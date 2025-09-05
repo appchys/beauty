@@ -763,7 +763,7 @@ export async function updateBusiness(businessId: string, updates: {
   try {
     const businessRef = doc(db, 'businesses', businessId);
     
-    const updateData: Record<string, any> = {
+    const updateData: Record<string, string | Date> = {
       updatedAt: new Date(),
     };
     

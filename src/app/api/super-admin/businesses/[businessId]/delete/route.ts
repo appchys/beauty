@@ -3,10 +3,10 @@ import { deleteBusiness } from '@/lib/firestore';
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { businessId: string } }
+  { params }: { params: Promise<{ businessId: string }> }
 ) {
   try {
-    const businessId = params.businessId;
+    const { businessId } = await params;
     
     if (!businessId) {
       return NextResponse.json(

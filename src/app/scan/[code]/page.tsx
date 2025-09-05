@@ -258,7 +258,8 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (_) {
+    } catch (error) {
+      console.error('Error processing automatic scan:', error);
       setError('Error al procesar el escaneo');
     } finally {
       setProcessing(false);
@@ -297,7 +298,8 @@ export default function ScanPage() {
       } else {
         setError(data.error);
       }
-    } catch (_) {
+    } catch (error) {
+      console.error('Error processing with stored client:', error);
       setError('Error al procesar el escaneo');
     } finally {
       setProcessing(false);

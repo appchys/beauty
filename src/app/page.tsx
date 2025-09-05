@@ -9,6 +9,7 @@ export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [localClient, setLocalClient] = useState<{ name: string } | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem('beautyClient');
@@ -18,7 +19,26 @@ export default function Home() {
         setLocalClient({ name: parsed.name });
       } catch {}
     }
+
+    // Verificar si es super admin
+    const superAdminAuth = localStorage.getItem('superAdminAuth');
+    if (superAdminAuth === 'true') {
+      setIsSuperAdmin(true);
+    }
   }, []);
+
+  // Redirección automática basada en el estado de autenticación
+  useEffect(() => {
+    if (status !== 'loading') {
+      if (isSuperAdmin) {
+        router.push('/super-admin');
+      } else if (session?.user?.role === 'admin') {
+        router.push('/admin');
+      } else if (session?.user?.role === 'client' || localClient) {
+        router.push('/client');
+      }
+    }
+  }, [session, status, localClient, isSuperAdmin, router]);
 
   if (status === 'loading') {
     return (
@@ -29,7 +49,9 @@ export default function Home() {
   }
 
   const handleNavigation = () => {
-    if (session?.user?.role === 'admin') {
+    if (isSuperAdmin) {
+      router.push('/super-admin');
+    } else if (session?.user?.role === 'admin') {
       router.push('/admin');
     } else if (session?.user?.role === 'client' || localClient) {
       router.push('/client');
@@ -48,7 +70,26 @@ export default function Home() {
             </div>
             
             <div className="flex items-center space-x-4">
-              {session ? (
+              {isSuperAdmin ? (
+                <>
+                  <span className="text-gray-700">Super Admin</span>
+                  <button
+                    onClick={handleNavigation}
+                    className="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700"
+                  >
+                    Panel Super Admin
+                  </button>
+                  <button
+                    onClick={() => {
+                      localStorage.removeItem('superAdminAuth');
+                      window.location.reload();
+                    }}
+                    className="text-gray-600 hover:text-gray-800"
+                  >
+                    Cerrar Sesión
+                  </button>
+                </>
+              ) : session ? (
                 <>
                   <span className="text-gray-700">Hola, {session.user.name}</span>
                   <button
@@ -208,6 +249,12 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="text-center text-gray-600">
             <p>© 2024 BeautyPoints. Sistema de fidelidad para centros estéticos.</p>
+            <button
+              onClick={() => router.push('/super-admin')}
+              className="mt-2 text-xs text-gray-400 hover:text-gray-600 opacity-30 hover:opacity-100 transition-opacity"
+            >
+              •
+            </button>
           </div>
         </div>
       </footer>

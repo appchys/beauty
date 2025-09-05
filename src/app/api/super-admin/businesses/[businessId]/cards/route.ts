@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { getBusinessCards } from '@/lib/firestore';
 
 export async function GET(
-  _: NextRequest,
+  _: Request,
   { params }: { params: Promise<{ businessId: string }> }
 ) {
   try {

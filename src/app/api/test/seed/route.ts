@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { initializeTestData } from '@/lib/init-test-data';
 
-export async function POST(_: NextRequest) {
+export async function POST() {
   try {
     // Solo permitir en desarrollo
     if (process.env.NODE_ENV !== 'development') {
