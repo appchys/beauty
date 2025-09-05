@@ -4,6 +4,7 @@ import {
   getDoc, 
   setDoc, 
   updateDoc, 
+  deleteDoc,
   query, 
   where, 
   getDocs, 
@@ -19,6 +20,7 @@ import {
   LoyaltyCard, 
   ClientCard, 
   ClientWithCardInfo,
+  SuperAdminStats,
   QRCode, 
   StickerScan,
   DashboardStats,
@@ -638,6 +640,212 @@ export async function updateUserProfile(userId: string, updates: {
     return true;
   } catch (error) {
     console.error('Error updating user profile:', error);
+    throw error;
+  }
+}
+
+// Funciones para Super Admin
+export async function getSuperAdminStats(): Promise<SuperAdminStats> {
+  try {
+    // Obtener conteo de negocios
+    const businessesSnapshot = await getDocs(collection(db, 'businesses'));
+    const totalBusinesses = businessesSnapshot.size;
+
+    // Obtener conteo de usuarios
+    const usersSnapshot = await getDocs(collection(db, 'users'));
+    const totalUsers = usersSnapshot.size;
+    
+    let totalClients = 0;
+    let totalAdmins = 0;
+    
+    usersSnapshot.forEach(doc => {
+      const userData = doc.data();
+      if (userData.role === 'admin') {
+        totalAdmins++;
+      } else {
+        totalClients++;
+      }
+    });
+
+    // Obtener conteo de tarjetas
+    const cardsSnapshot = await getDocs(collection(db, 'loyaltyCards'));
+    const totalCards = cardsSnapshot.size;
+    
+    let activeCards = 0;
+    cardsSnapshot.forEach(doc => {
+      const cardData = doc.data();
+      if (cardData.isActive) {
+        activeCards++;
+      }
+    });
+
+    // Obtener conteo de scans
+    const scansSnapshot = await getDocs(collection(db, 'stickerScans'));
+    const totalScans = scansSnapshot.size;
+
+    // Obtener conteo de tarjetas completadas
+    const clientCardsSnapshot = await getDocs(collection(db, 'clientCards'));
+    let completedCards = 0;
+    
+    clientCardsSnapshot.forEach(doc => {
+      const clientCardData = doc.data();
+      if (clientCardData.isCompleted) {
+        completedCards++;
+      }
+    });
+
+    return {
+      totalBusinesses,
+      totalUsers,
+      totalCards,
+      totalScans,
+      totalClients,
+      totalAdmins,
+      completedCards,
+      activeCards
+    };
+  } catch (error) {
+    console.error('Error getting super admin stats:', error);
+    return {
+      totalBusinesses: 0,
+      totalUsers: 0,
+      totalCards: 0,
+      totalScans: 0,
+      totalClients: 0,
+      totalAdmins: 0,
+      completedCards: 0,
+      activeCards: 0
+    };
+  }
+}
+
+export async function getAllBusinesses(): Promise<Business[]> {
+  try {
+    const q = query(collection(db, 'businesses'), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id,
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+      updatedAt: doc.data().updatedAt?.toDate() || new Date()
+    })) as Business[];
+  } catch (error) {
+    console.error('Error getting all businesses:', error);
+    return [];
+  }
+}
+
+export async function getAllUsers(): Promise<User[]> {
+  try {
+    const q = query(collection(db, 'users'), orderBy('createdAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id,
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+      updatedAt: doc.data().updatedAt?.toDate() || new Date()
+    })) as User[];
+  } catch (error) {
+    console.error('Error getting all users:', error);
+    return [];
+  }
+}
+
+export async function updateBusiness(businessId: string, updates: {
+  name?: string;
+  description?: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+}): Promise<Business | null> {
+  try {
+    const businessRef = doc(db, 'businesses', businessId);
+    
+    const updateData: Record<string, any> = {
+      updatedAt: new Date(),
+    };
+    
+    if (updates.name !== undefined) {
+      updateData.name = updates.name;
+    }
+    if (updates.description !== undefined) {
+      updateData.description = updates.description;
+    }
+    if (updates.address !== undefined) {
+      updateData.address = updates.address;
+    }
+    if (updates.phone !== undefined) {
+      updateData.phone = updates.phone;
+    }
+    if (updates.email !== undefined) {
+      updateData.email = updates.email;
+    }
+    
+    await updateDoc(businessRef, updateData);
+    
+    // Obtener el documento actualizado
+    const updatedDoc = await getDoc(businessRef);
+    if (updatedDoc.exists()) {
+      return {
+        ...updatedDoc.data(),
+        id: updatedDoc.id,
+        createdAt: updatedDoc.data().createdAt?.toDate() || new Date(),
+        updatedAt: updatedDoc.data().updatedAt?.toDate() || new Date()
+      } as Business;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('Error updating business:', error);
+    throw error;
+  }
+}
+
+export async function getBusinessCards(businessId: string): Promise<LoyaltyCard[]> {
+  try {
+    const q = query(
+      collection(db, 'loyaltyCards'),
+      where('businessId', '==', businessId),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    
+    return querySnapshot.docs.map(doc => ({
+      ...doc.data(),
+      id: doc.id,
+      createdAt: doc.data().createdAt?.toDate() || new Date(),
+      updatedAt: doc.data().updatedAt?.toDate() || new Date()
+    })) as LoyaltyCard[];
+  } catch (error) {
+    console.error('Error getting business cards:', error);
+    return [];
+  }
+}
+
+export async function deleteBusiness(businessId: string): Promise<void> {
+  try {
+    const businessRef = doc(db, 'businesses', businessId);
+    
+    // Primero eliminar todas las tarjetas de lealtad asociadas
+    const cardsQuery = query(
+      collection(db, 'loyaltyCards'),
+      where('businessId', '==', businessId)
+    );
+    const cardsSnapshot = await getDocs(cardsQuery);
+    
+    // Eliminar todas las tarjetas en un batch
+    if (!cardsSnapshot.empty) {
+      for (const cardDoc of cardsSnapshot.docs) {
+        await deleteDoc(doc(db, 'loyaltyCards', cardDoc.id));
+      }
+    }
+    
+    // Eliminar el negocio
+    await deleteDoc(businessRef);
+  } catch (error) {
+    console.error('Error deleting business:', error);
     throw error;
   }
 }

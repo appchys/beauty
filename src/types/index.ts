@@ -61,6 +61,17 @@ export interface ClientWithCardInfo {
   createdAt: Date;
 }
 
+export interface SuperAdminStats {
+  totalBusinesses: number;
+  totalUsers: number;
+  totalCards: number;
+  totalScans: number;
+  totalClients: number;
+  totalAdmins: number;
+  completedCards: number;
+  activeCards: number;
+}
+
 export interface ClientProgress {
   cardId: string;
   cardName: string;
