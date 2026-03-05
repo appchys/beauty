@@ -13,6 +13,7 @@ function SignInForm() {
   const [userExists, setUserExists] = useState(false);
   const [needsPassword, setNeedsPassword] = useState(false);
   const [isCreatingPassword, setIsCreatingPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -67,6 +68,35 @@ function SignInForm() {
     }
   };
 
+  const handleForgotPassword = async () => {
+    if (!formData.email.trim() || isSignUp) return;
+
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const result = await checkUserExists(formData.email);
+
+      setUserExists(result.exists);
+      setNeedsPassword(result.exists && !result.hasPassword);
+      setUserChecked(true);
+
+      if (!result.exists) {
+        setError('Usuario no encontrado');
+        setIsResettingPassword(false);
+        return;
+      }
+
+      setIsCreatingPassword(false);
+      setIsResettingPassword(true);
+      setFormData((prev) => ({ ...prev, password: '', confirmPassword: '' }));
+    } catch {
+      setError('Ocurrió un error inesperado');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -95,7 +125,7 @@ function SignInForm() {
             router.push('/client');
           }
         }
-      } else if (isCreatingPassword) {
+      } else if (isCreatingPassword || isResettingPassword) {
         // Flujo de creación de contraseña para usuario existente
         if (formData.password !== formData.confirmPassword) {
           setError('Las contraseñas no coinciden');
@@ -213,6 +243,8 @@ function SignInForm() {
                       setUserExists(false);
                       setNeedsPassword(false);
                       setIsCreatingPassword(false);
+                      setIsResettingPassword(false);
+                      setError('');
                     }}
                     onBlur={handleEmailPhoneCheck}
                     onKeyDown={(e) => {
@@ -307,10 +339,10 @@ function SignInForm() {
               )}
 
               {/* Password - Solo mostrar si el usuario existe y tiene contraseña, o si está registrándose, o si está creando contraseña */}
-              {(isSignUp || (userExists && !needsPassword) || isCreatingPassword) && (
+              {(isSignUp || (userExists && !needsPassword) || isCreatingPassword || isResettingPassword) && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {isCreatingPassword ? 'Crear Contraseña' : 'Contraseña'}
+                    {isCreatingPassword ? 'Crear Contraseña' : isResettingPassword ? 'Nueva Contraseña' : 'Contraseña'}
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -327,7 +359,7 @@ function SignInForm() {
               )}
 
               {/* Confirm Password - Solo para creación de contraseña */}
-              {isCreatingPassword && (
+              {(isCreatingPassword || isResettingPassword) && (
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Confirmar Contraseña
@@ -346,6 +378,20 @@ function SignInForm() {
                 </div>
               )}
 
+              {/* Forgot password */}
+              {!isSignUp && !!formData.email.trim() && !isCreatingPassword && !isResettingPassword && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-sm text-pink-600 hover:text-pink-700 font-medium"
+                    disabled={isLoading}
+                  >
+                    Olvidé mi contraseña
+                  </button>
+                </div>
+              )}
+
               {/* Error */}
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3">
@@ -357,11 +403,12 @@ function SignInForm() {
               <button
                 type="submit"
                 disabled={isLoading || (!isSignUp && !userChecked && formData.email.trim() !== '')}
-                className="w-full bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition-colors disabled:opacity-50"
+                className="w-full bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition-colors disabled:bg-pink-300 disabled:text-pink-800 disabled:cursor-not-allowed"
               >
                 {isLoading ? 'Procesando...' : 
                   isSignUp ? 'Crear Cuenta' : 
-                  isCreatingPassword ? 'Crear Contraseña' : 
+                  isCreatingPassword ? 'Crear Contraseña' :
+                  isResettingPassword ? 'Restablecer Contraseña' : 
                   'Iniciar Sesión'}
               </button>
             </form>
@@ -377,6 +424,7 @@ function SignInForm() {
                   setUserExists(false);
                   setNeedsPassword(false);
                   setIsCreatingPassword(false);
+                  setIsResettingPassword(false);
                   setFormData({
                     email: '',
                     password: '',

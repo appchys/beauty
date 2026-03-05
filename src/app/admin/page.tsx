@@ -1,13 +1,15 @@
 'use client';
 
-import { useSession } from 'next-auth/react';
-import { useState, useEffect } from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { QrCode, Plus, Users, TrendingUp, Star, Download, Loader2 } from 'lucide-react';
 import { LoyaltyCard, QRCode as QRCodeType, Business, ClientWithCardInfo } from '@/types';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
+  const router = useRouter();
   const [cards, setCards] = useState<LoyaltyCard[]>([]);
   const [qrCodes, setQRCodes] = useState<QRCodeType[]>([]);
   const [business, setBusiness] = useState<Business | null>(null);
@@ -24,6 +26,8 @@ export default function AdminDashboard() {
   const [selectedCardForClients, setSelectedCardForClients] = useState<LoyaltyCard | null>(null);
   const [cardClients, setCardClients] = useState<ClientWithCardInfo[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
+  const [showAccountMenu, setShowAccountMenu] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement | null>(null);
 
   // Función helper para generar gradiente basado en color
   const generateCardGradient = (color: string) => {
@@ -55,6 +59,31 @@ export default function AdminDashboard() {
       fetchBusinessProfile();
     }
   }, [session]);
+
+  useEffect(() => {
+    if (!showAccountMenu) return;
+
+    const handleMouseDown = (event: MouseEvent) => {
+      if (!accountMenuRef.current) return;
+      if (event.target instanceof Node && !accountMenuRef.current.contains(event.target)) {
+        setShowAccountMenu(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setShowAccountMenu(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleMouseDown);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showAccountMenu]);
 
   const fetchCards = async () => {
     try {
@@ -223,20 +252,48 @@ export default function AdminDashboard() {
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               Panel de Administración
             </h1>
-            <div 
-              onClick={() => window.location.href = '/admin/profile'}
-              className="cursor-pointer group flex-shrink-0"
-              title="Editar perfil de tienda"
-            >
-              {business?.logoUrl ? (
-                <img
-                  src={business.logoUrl}
-                  alt="Logo de la tienda"
-                  className="w-12 h-12 min-w-12 min-h-12 rounded-full object-cover border-2 border-purple-200 group-hover:border-purple-400 transition-colors shadow-lg"
-                />
-              ) : (
-                <div className="w-12 h-12 min-w-12 min-h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg group-hover:bg-purple-700 transition-colors shadow-lg">
-                  {business?.name?.charAt(0)?.toUpperCase() || 'T'}
+            <div ref={accountMenuRef} className="relative flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowAccountMenu((v) => !v)}
+                className="cursor-pointer group"
+                title="Cuenta"
+              >
+                {business?.logoUrl ? (
+                  <img
+                    src={business.logoUrl}
+                    alt="Logo de la tienda"
+                    className="w-12 h-12 min-w-12 min-h-12 rounded-full object-cover border-2 border-purple-200 group-hover:border-purple-400 transition-colors shadow-lg"
+                  />
+                ) : (
+                  <div className="w-12 h-12 min-w-12 min-h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg group-hover:bg-purple-700 transition-colors shadow-lg">
+                    {business?.name?.charAt(0)?.toUpperCase() || 'T'}
+                  </div>
+                )}
+              </button>
+
+              {showAccountMenu && (
+                <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden z-50">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAccountMenu(false);
+                      router.push('/admin/profile');
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Mi perfil
+                  </button>
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setShowAccountMenu(false);
+                      await signOut({ callbackUrl: '/auth/signin' });
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
+                  >
+                    Cerrar sesión
+                  </button>
                 </div>
               )}
             </div>
