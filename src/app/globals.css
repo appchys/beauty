@@ -2,153 +2,119 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f172a;
+  
+  --surface: #f8fafc;
+  --surface-hover: #f1f5f9;
+  
+  --primary: #8b5cf6;
+  --primary-foreground: #ffffff;
+  --secondary: #ec4899;
+  --secondary-foreground: #ffffff;
+  
+  --accent: #14b8a6;
+  --accent-foreground: #ffffff;
+  
+  --border: #e2e8f0;
+  --ring: #8b5cf6;
+
+  --glass-bg: rgba(255, 255, 255, 0.7);
+  --glass-border: rgba(255, 255, 255, 0.5);
+  
+  --radius: 1rem;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #09090b;
+    --foreground: #fafafa;
+    
+    --surface: #18181b;
+    --surface-hover: #27272a;
+    
+    --primary: #a78bfa;
+    --primary-foreground: #09090b;
+    --secondary: #f472b6;
+    --secondary-foreground: #09090b;
+    
+    --accent: #2dd4bf;
+    --accent-foreground: #09090b;
+    
+    --border: #27272a;
+    --ring: #a78bfa;
+
+    --glass-bg: rgba(24, 24, 27, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-poppins), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Estilos personalizados para tarjetas de fidelidad */
-.text-shadow {
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+/* Base utility classes for the premium design system */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
 }
 
-.line-clamp-2 {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+.premium-shadow {
+  box-shadow: 0 10px 40px -10px rgba(0,0,0,0.2);
 }
 
-/* Colores coral personalizados */
-.bg-coral-50 {
-  background-color: #fef7f5;
+@media (prefers-color-scheme: dark) {
+  .premium-shadow {
+    box-shadow: 0 10px 40px -10px rgba(0,0,0,0.5);
+  }
 }
 
-.bg-coral-100 {
-  background-color: #fed7cc;
+/* Animations */
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.bg-coral-200 {
-  background-color: #fcb8a3;
+.animate-fade-in-up {
+  animation: fade-in-up 0.5s ease-out forwards;
 }
 
-.bg-coral-500 {
-  background-color: #ff7f66;
+.transition-all-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.bg-coral-600 {
-  background-color: #ff6b4a;
-}
-
-.bg-coral-700 {
-  background-color: #ff5733;
-}
-
-.text-coral-500 {
-  color: #ff7f66;
-}
-
-.text-coral-600 {
-  color: #ff6b4a;
-}
-
-.border-coral-200 {
-  border-color: #fcb8a3;
-}
-
-.from-coral-200 {
-  --tw-gradient-from: #fcb8a3 var(--tw-gradient-from-position);
-  --tw-gradient-to: rgb(252 184 163 / 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
-}
-
-.via-coral-50 {
-  --tw-gradient-to: rgb(254 247 245 / 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), #fef7f5 var(--tw-gradient-via-position), var(--tw-gradient-to);
-}
-
-.to-coral-100 {
-  --tw-gradient-to: #fed7cc var(--tw-gradient-to-position);
-}
-
-.to-coral-50 {
-  --tw-gradient-to: #fef7f5 var(--tw-gradient-to-position);
-}
-
-.from-orange-50 {
-  --tw-gradient-from: #fff7ed var(--tw-gradient-from-position);
-  --tw-gradient-to: rgb(255 247 237 / 0) var(--tw-gradient-to-position);
-  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
-}
-
-.focus\:ring-coral-500:focus {
-  --tw-ring-color: #ff7f66;
-}
-
-.hover\:bg-coral-600:hover {
-  background-color: #ff6b4a;
-}
-
-.hover\:bg-coral-700:hover {
-  background-color: #ff5733;
-}
-
-/* Efectos adicionales para las tarjetas */
-.card-credit-ratio {
-  aspect-ratio: 1.6;
-}
-
-.backdrop-blur-glass {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-}
-
-/* Efectos especiales para stickers */
+/* Sticker visual classes */
 .sticker-completed {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 50%, #f9a8d4 100%);
-  box-shadow: 0 2px 4px rgba(236, 72, 153, 0.3);
-  animation: pulse-gentle 2s ease-in-out infinite;
+  background: linear-gradient(135deg, var(--secondary) 0%, var(--primary) 100%);
+  box-shadow: 0 0 15px var(--primary);
+  animation: pulse-glow 2s infinite alternate;
 }
 
-@keyframes pulse-gentle {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.05);
-  }
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 10px var(--primary); transform: scale(1); }
+  100% { box-shadow: 0 0 20px var(--secondary); transform: scale(1.05); }
 }
 
 .sticker-empty {
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(4px);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--surface);
+  border: 2px dashed var(--border);
 }
 
-/* Mejoras para el diseño femenino */
-.beauty-shadow {
-  box-shadow: 0 4px 6px -1px rgba(236, 72, 153, 0.1), 0 2px 4px -1px rgba(236, 72, 153, 0.06);
-}
-
-/* Ícono de belleza por defecto */
-.beauty-icon {
-  background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-  transition: all 0.3s ease;
-}
-
-.beauty-icon:hover {
-  transform: scale(1.05);
-  box-shadow: 0 4px 8px rgba(236, 72, 153, 0.2);
+.text-gradient {
+  background: linear-gradient(to right, var(--primary), var(--secondary));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

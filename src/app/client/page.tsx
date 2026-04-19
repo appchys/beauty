@@ -2,9 +2,9 @@
 
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
-import { ClientProgress } from '@/types';
+import { Appointment, ClientProgress } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, Trophy, Clock, CheckCircle, Sparkles, User, X, Camera } from 'lucide-react';
+import { Star, Trophy, Clock, CheckCircle, Sparkles, User, X, Camera, Calendar } from 'lucide-react';
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
@@ -15,6 +15,7 @@ export default function ClientDashboard() {
   const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', profileImage: '' });
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
 
   // Función helper para generar gradiente basado en color
   const generateCardGradient = (color: string) => {
@@ -61,10 +62,19 @@ export default function ClientDashboard() {
 
   const fetchProgress = async () => {
     try {
-      const response = await fetch('/api/client/progress');
-      if (response.ok) {
-        const data = await response.json();
-        setProgress(data.progress);
+      const [resProgress, resAppointments] = await Promise.all([
+        fetch('/api/client/progress'),
+        fetch('/api/client/appointments')
+      ]);
+      
+      if (resProgress.ok) {
+        const data = await resProgress.json();
+        setProgress(data.progress || []);
+      }
+      
+      if (resAppointments.ok) {
+        const data = await resAppointments.json();
+        setAppointments(data.appointments || []);
       }
     } catch (error) {
       console.error('Error fetching progress:', error);
@@ -76,10 +86,19 @@ export default function ClientDashboard() {
   // Fetch progreso usando el id de localStorage (sin auth)
   const fetchProgressLocal = async (clientId: string) => {
     try {
-      const response = await fetch(`/api/client/progress?id=${clientId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setProgress(data.progress);
+      const [resProgress, resAppointments] = await Promise.all([
+        fetch(`/api/client/progress?id=${clientId}`),
+        fetch(`/api/client/appointments?id=${clientId}`)
+      ]);
+      
+      if (resProgress.ok) {
+        const data = await resProgress.json();
+        setProgress(data.progress || []);
+      }
+      
+      if (resAppointments.ok) {
+        const data = await resAppointments.json();
+        setAppointments(data.appointments || []);
       }
     } catch (error) {
       console.error('Error fetching progress (local):', error);
@@ -367,6 +386,30 @@ export default function ClientDashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Citas Programadas */}
+        {appointments.length > 0 && (
+          <div className="glass-panel p-6 rounded-2xl mb-8 animate-fade-in-up border-l-4 border-[var(--primary)]">
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+              <Calendar className="w-6 h-6 text-[var(--primary)]" />
+              Próximas Citas
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {appointments.slice(0, 3).map((app, idx) => (
+                <div key={idx} className="bg-[var(--surface-hover)] border border-[var(--border)] p-4 rounded-xl flex flex-col premium-shadow transition-all-smooth hover:-translate-y-1">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="font-bold">{app.serviceType}</span>
+                    <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-700 font-medium">{app.status === 'pending' ? 'Pendiente' : 'Confirmada'}</span>
+                  </div>
+                  <div className="flex items-center text-sm opacity-80 gap-3 mt-1">
+                    <div className="flex items-center gap-1"><Calendar className="w-4 h-4 text-[var(--primary)]"/> {new Date(app.date).toLocaleDateString()}</div>
+                    <div className="flex items-center gap-1"><Clock className="w-4 h-4 text-[var(--secondary)]"/> {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Progress Cards */}
         <div className="space-y-6">

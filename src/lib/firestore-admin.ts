@@ -7,7 +7,9 @@ import {
   QRCode, 
   StickerScan,
   DashboardStats,
-  ClientProgress 
+  ClientProgress,
+  Appointment,
+  Service
 } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -268,10 +270,22 @@ export async function getClientProgress(clientId: string): Promise<ClientProgres
 // Dashboard Stats
 export async function getDashboardStats(businessId: string): Promise<DashboardStats> {
   const adminDb = getAdminDb();
-  const [cardsSnapshot, scansSnapshot, clientCardsSnapshot] = await Promise.all([
+  
+  // Get start of today
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const [cardsSnapshot, scansSnapshot, clientCardsSnapshot, appointmentsSnapshot] = await Promise.all([
     adminDb.collection('loyaltyCards').where('businessId', '==', businessId).get(),
     adminDb.collection('stickerScans').where('businessId', '==', businessId).orderBy('scannedAt', 'desc').limit(10).get(),
     adminDb.collection('clientCards').get(),
+    // Get upcoming appointments for today or future
+    adminDb.collection('appointments')
+      .where('businessId', '==', businessId)
+      .where('date', '>=', today)
+      .orderBy('date', 'asc')
+      .limit(10)
+      .get()
   ]);
   
   const cards = cardsSnapshot.docs.map(doc => doc.data() as LoyaltyCard);
@@ -287,6 +301,16 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
     }
     return false;
   });
+
+  const upcomingAppointments = appointmentsSnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      date: data.date.toDate ? data.date.toDate() : new Date(data.date),
+      createdAt: data.createdAt?.toDate ? data.createdAt?.toDate() : new Date(data.createdAt || Date.now()),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt?.toDate() : new Date(data.updatedAt || Date.now())
+    } as Appointment;
+  });
   
   return {
     totalClients: clientIds.size,
@@ -295,5 +319,110 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
     activeCards: cards.filter(card => card.isActive).length,
     completedCards: completedCards.length,
     recentScans,
+    upcomingAppointments
   };
+}
+
+// Appointment functions
+export async function createAppointment(appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
+  const appointment: Appointment = {
+    ...appointmentData,
+    id: uuidv4(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  
+  const adminDb = getAdminDb();
+  await adminDb.collection('appointments').doc(appointment.id).set(appointment);
+  return appointment;
+}
+
+export async function getAppointmentsByBusinessId(businessId: string): Promise<Appointment[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('appointments')
+    .where('businessId', '==', businessId)
+    .orderBy('date', 'asc')
+    .get();
+  
+  const docs = snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      date: data.date.toDate ? data.date.toDate() : new Date(data.date),
+      createdAt: data.createdAt?.toDate ? data.createdAt?.toDate() : new Date(data.createdAt || Date.now()),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt?.toDate() : new Date(data.updatedAt || Date.now())
+    } as Appointment;
+  });
+
+  return docs;
+}
+
+export async function getAppointmentsByClientId(clientId: string): Promise<Appointment[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('appointments')
+    .where('clientId', '==', clientId)
+    .orderBy('date', 'desc')
+    .get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      date: data.date.toDate ? data.date.toDate() : new Date(data.date),
+      createdAt: data.createdAt?.toDate ? data.createdAt?.toDate() : new Date(data.createdAt || Date.now()),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt?.toDate() : new Date(data.updatedAt || Date.now())
+    } as Appointment;
+  });
+}
+
+export async function updateAppointmentStatus(appointmentId: string, status: Appointment['status']): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('appointments').doc(appointmentId).update({
+    status,
+    updatedAt: new Date()
+  });
+}
+
+// Service functions
+export async function createService(serviceData: Omit<Service, 'id' | 'createdAt' | 'updatedAt'>): Promise<Service> {
+  const service: Service = {
+    ...serviceData,
+    id: uuidv4(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  
+  const adminDb = getAdminDb();
+  await adminDb.collection('services').doc(service.id).set(service);
+  return service;
+}
+
+export async function getServicesByBusinessId(businessId: string): Promise<Service[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('services')
+    .where('businessId', '==', businessId)
+    
+    .get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      createdAt: data.createdAt?.toDate ? data.createdAt?.toDate() : new Date(data.createdAt || Date.now()),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt?.toDate() : new Date(data.updatedAt || Date.now())
+    } as Service;
+  });
+}
+
+export async function updateService(serviceId: string, updateData: Partial<Service>): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('services').doc(serviceId).update({
+    ...updateData,
+    updatedAt: new Date()
+  });
+}
+
+export async function deleteService(serviceId: string): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('services').doc(serviceId).delete();
 }

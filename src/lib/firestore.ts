@@ -24,7 +24,8 @@ import {
   QRCode, 
   StickerScan,
   DashboardStats,
-  ClientProgress 
+  ClientProgress,
+  Appointment
 } from '@/types';
 
 // User functions
@@ -454,6 +455,9 @@ export async function getClientProgress(clientId: string): Promise<ClientProgres
 
 // Dashboard Stats
 export async function getDashboardStats(businessId: string): Promise<DashboardStats> {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
   // Obtener tarjetas del negocio
   const cardsQuery = query(collection(db, 'loyaltyCards'), where('businessId', '==', businessId));
   const cardsSnapshot = await getDocs(cardsQuery);
@@ -485,6 +489,26 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
       scannedAt: data.scannedAt.toDate(),
     };
   });
+
+  // Obtener citas recientes/futuras
+  const appointmentsQuery = query(
+    collection(db, 'appointments'),
+    where('businessId', '==', businessId),
+    where('date', '>=', Timestamp.fromDate(today)),
+    orderBy('date', 'asc'),
+    limit(10)
+  );
+  const appointmentsSnapshot = await getDocs(appointmentsQuery);
+  const upcomingAppointments = appointmentsSnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      date: data.date?.toDate() || new Date(),
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date()
+    } as Appointment;
+  });
   
   // Obtener todas las tarjetas de cliente para estas tarjetas
   const cardIds = cards.map(card => card.id);
@@ -514,6 +538,7 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
     activeCards: cards.filter(card => card.isActive).length,
     completedCards: completedCards.length,
     recentScans,
+    upcomingAppointments
   };
 }
 
@@ -848,4 +873,73 @@ export async function deleteBusiness(businessId: string): Promise<void> {
     console.error('Error deleting business:', error);
     throw error;
   }
+}
+
+// Appointment functions
+export async function createAppointment(appointmentData: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Appointment> {
+  const appointmentId = uuidv4();
+  const now = new Date();
+  
+  const appointment: Appointment = {
+    ...appointmentData,
+    id: appointmentId,
+    createdAt: now,
+    updatedAt: now,
+  };
+  
+  await setDoc(doc(db, 'appointments', appointmentId), {
+    ...appointment,
+    createdAt: Timestamp.fromDate(now),
+    updatedAt: Timestamp.fromDate(now),
+  });
+  
+  return appointment;
+}
+
+export async function getAppointmentsByBusinessId(businessId: string): Promise<Appointment[]> {
+  const q = query(
+    collection(db, 'appointments'),
+    where('businessId', '==', businessId),
+    orderBy('date', 'asc')
+  );
+  const querySnapshot = await getDocs(q);
+  
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      date: data.date?.toDate() || new Date(),
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date()
+    } as Appointment;
+  });
+}
+
+export async function getAppointmentsByClientId(clientId: string): Promise<Appointment[]> {
+  const q = query(
+    collection(db, 'appointments'),
+    where('clientId', '==', clientId),
+    orderBy('date', 'desc')
+  );
+  const querySnapshot = await getDocs(q);
+  
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      id: doc.id,
+      date: data.date?.toDate() || new Date(),
+      createdAt: data.createdAt?.toDate() || new Date(),
+      updatedAt: data.updatedAt?.toDate() || new Date()
+    } as Appointment;
+  });
+}
+
+export async function updateAppointmentStatus(appointmentId: string, status: Appointment['status']): Promise<void> {
+  const appointmentRef = doc(db, 'appointments', appointmentId);
+  await updateDoc(appointmentRef, {
+    status,
+    updatedAt: Timestamp.fromDate(new Date())
+  });
 }

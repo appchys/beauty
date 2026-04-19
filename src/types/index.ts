@@ -114,8 +114,47 @@ export interface DashboardStats {
   activeCards: number;
   completedCards: number;
   recentScans: StickerScan[];
+  upcomingAppointments?: Appointment[];
 }
 
 export interface CardStickerStatistics {
   [stickerCount: number]: number;
+}
+
+export interface Appointment {
+  id: string;
+  businessId: string;
+  clientId: string;
+  clientName?: string;
+  clientPhone?: string;
+  date: Date;
+  duration: number; // in minutes
+  serviceType: string;
+  status: 'pending' | 'completed' | 'cancelled' | 'no_show';
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ServiceVariant {
+  id: string;
+  name: string;
+  price: number;
+  duration?: number;
+  photo?: string;
+}
+
+export interface Service {
+  id: string;
+  businessId: string;
+  name: string;
+  category?: string;
+  photo?: string;
+  variants?: ServiceVariant[];
+  duration: number; // in minutes
+  price: number;
+  description?: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

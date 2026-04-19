@@ -5,19 +5,10 @@ import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Business } from '@/types';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { useSession } from 'next-auth/react';
-import { auth } from '@/lib/firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword,
-  AuthError
-} from 'firebase/auth';
+import { uploadProfileImage, compressImage, deleteProfileImage } from '@/lib/storage';
 
 export default function AdminProfilePage() {
   const router = useRouter();
-  const { data: session } = useSession();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -69,53 +60,6 @@ export default function AdminProfilePage() {
     }
   };
 
-  const ensureFirebaseAuth = async () => {
-    if (!session?.user?.email) return;
-    
-    // Solo intenta si no está autenticado
-    if (!auth.currentUser || auth.currentUser.email !== session.user.email) {
-      try {
-        // Primero intenta iniciar sesión
-        await signInWithEmailAndPassword(
-          auth,
-          session.user.email,
-          'admin_dummy_password'
-        );
-      } catch (error) {
-        const err = error as AuthError;
-        try {
-          // Si las credenciales son inválidas o el usuario no existe, intentamos crear uno nuevo
-          if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found') {
-            try {
-              // Intentar crear el usuario
-              await createUserWithEmailAndPassword(
-                auth,
-                session.user.email,
-                'admin_dummy_password'
-              );
-            } catch (error) {
-              const createErr = error as AuthError;
-              if (createErr.code === 'auth/email-already-in-use') {
-                console.error('El usuario existe pero la contraseña es incorrecta');
-                setError('Error de autenticación. Por favor, contacte al administrador.');
-              } else {
-                console.error('Error al crear usuario en Firebase:', createErr);
-                setError('Error al autenticar con Firebase');
-              }
-              throw createErr;
-            }
-          } else {
-            console.error('Error al autenticar con Firebase:', err);
-            setError('Error al autenticar con Firebase');
-            throw err;
-          }
-        } catch (finalErr) {
-          throw finalErr;
-        }
-      }
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!profile) return;
@@ -124,42 +68,15 @@ export default function AdminProfilePage() {
     setError(null);
 
     try {
-      await ensureFirebaseAuth();
-    } catch (err) {
-      console.error('Error en Firebase Auth:', err);
-      // Continuar de todos modos para debug
-    }
+      const previousLogoUrl = profile.logoUrl || '';
+      let logoUrl = profile.logoUrl || '';
 
-    // Mantener la URL existente si no hay nuevo archivo
-    let logoUrl = profile.logoUrl || '';
-    console.log('Estado actual:', {
-      profile,
-      logoUrl,
-      logoFile: logoFile ? 'Existe' : 'No existe',
-      logoPreview
-    });
-    
-    if (logoFile) {
-      try {
-        const storageRef = ref(storage, `business-logos/${profile.id}`);
-        await uploadBytes(storageRef, logoFile);
-        logoUrl = await getDownloadURL(storageRef);
-        console.log('Nueva URL del logo después de subir:', logoUrl);
-      } catch (err) {
-        console.error('Error al subir imagen:', err);
-        setError('Error al subir la imagen');
-        setSaving(false);
-        return;
+      if (logoFile) {
+        const compressedFile = await compressImage(logoFile, 800, 800, 0.85);
+        logoUrl = await uploadProfileImage(compressedFile, profile.id);
       }
-    }
 
-    // Crear objeto actualizado con la URL del logo
-    const updatedProfile = { ...profile, logoUrl };
-    console.log('Enviando al backend:', updatedProfile);
-
-    try {
-      console.log('Enviando al backend:', JSON.stringify(updatedProfile, null, 2));
-      
+      const updatedProfile = { ...profile, logoUrl };
       const response = await fetch('/api/admin/profile', {
         method: 'PUT',
         headers: {
@@ -167,20 +84,23 @@ export default function AdminProfilePage() {
         },
         body: JSON.stringify(updatedProfile),
       });
-      
+
       const updatedData = await response.json();
-      console.log('Respuesta del backend:', updatedData);
 
       if (!response.ok) {
-        throw new Error('Failed to update profile');
+        throw new Error(updatedData?.error || 'Failed to update profile');
       }
 
-      // Actualizar el estado local antes de redirigir
       setProfile(updatedData.business);
-      
-      // Esperar un momento para ver los logs
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      setLogoFile(null);
+      if (updatedData.business?.logoUrl) {
+        setLogoPreview(updatedData.business.logoUrl);
+      }
+
+      if (logoFile && previousLogoUrl && previousLogoUrl !== logoUrl) {
+        await deleteProfileImage(previousLogoUrl);
+      }
+
       router.push('/admin');
     } catch (err) {
       setError('Error al actualizar el perfil');

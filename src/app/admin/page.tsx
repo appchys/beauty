@@ -1,18 +1,17 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { QrCode, Plus, Users, TrendingUp, Star, Download, Loader2 } from 'lucide-react';
-import { LoyaltyCard, QRCode as QRCodeType, Business, ClientWithCardInfo } from '@/types';
+import { QrCode, Plus, Users, TrendingUp, Star, Download, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { LoyaltyCard, QRCode as QRCodeType, ClientWithCardInfo, Appointment } from '@/types';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [cards, setCards] = useState<LoyaltyCard[]>([]);
   const [qrCodes, setQRCodes] = useState<QRCodeType[]>([]);
-  const [business, setBusiness] = useState<Business | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreateCard, setShowCreateCard] = useState(false);
   const [selectedCard, setSelectedCard] = useState('');
@@ -24,6 +23,7 @@ export default function AdminDashboard() {
   const [generatingQR, setGeneratingQR] = useState<string | null>(null);
   const [showClientsModal, setShowClientsModal] = useState(false);
   const [selectedCardForClients, setSelectedCardForClients] = useState<LoyaltyCard | null>(null);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [cardClients, setCardClients] = useState<ClientWithCardInfo[]>([]);
   const [loadingClients, setLoadingClients] = useState(false);
   const [showAccountMenu, setShowAccountMenu] = useState(false);
@@ -56,9 +56,21 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (session?.user?.role === 'admin') {
       fetchCards();
-      fetchBusinessProfile();
+      fetchAppointments();
     }
   }, [session]);
+
+  const fetchAppointments = async () => {
+    try {
+      const res = await fetch('/api/admin/appointments');
+      if (res.ok) {
+        const data = await res.json();
+        setAppointments(data.appointments);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   useEffect(() => {
     if (!showAccountMenu) return;
@@ -97,18 +109,6 @@ export default function AdminDashboard() {
       console.error('Error fetching cards:', error);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchBusinessProfile = async () => {
-    try {
-      const response = await fetch('/api/admin/profile');
-      if (response.ok) {
-        const data = await response.json();
-        setBusiness(data.business);
-      }
-    } catch (error) {
-      console.error('Error fetching business profile:', error);
     }
   };
 
@@ -244,62 +244,18 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Panel de Administración
-            </h1>
-            <div ref={accountMenuRef} className="relative flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setShowAccountMenu((v) => !v)}
-                className="cursor-pointer group"
-                title="Cuenta"
-              >
-                {business?.logoUrl ? (
-                  <img
-                    src={business.logoUrl}
-                    alt="Logo de la tienda"
-                    className="w-12 h-12 min-w-12 min-h-12 rounded-full object-cover border-2 border-purple-200 group-hover:border-purple-400 transition-colors shadow-lg"
-                  />
-                ) : (
-                  <div className="w-12 h-12 min-w-12 min-h-12 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg group-hover:bg-purple-700 transition-colors shadow-lg">
-                    {business?.name?.charAt(0)?.toUpperCase() || 'T'}
-                  </div>
-                )}
-              </button>
-
-              {showAccountMenu && (
-                <div className="absolute right-0 mt-2 w-44 rounded-lg border border-gray-200 bg-white shadow-lg overflow-hidden z-50">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAccountMenu(false);
-                      router.push('/admin/profile');
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Mi perfil
-                  </button>
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      setShowAccountMenu(false);
-                      await signOut({ callbackUrl: '/auth/signin' });
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-50"
-                  >
-                    Cerrar sesión
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          <p className="text-gray-600">Gestiona tus tarjetas de fidelidad y genera códigos QR únicos</p>
+    <div className="space-y-6 animate-fade-in-up">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Fidelización y Tarjetas</h1>
+          <p className="opacity-70 mt-1">Gestiona tus beneficios y escanea/genera códigos QR.</p>
         </div>
+        <div className="flex gap-2">
+           <button onClick={() => router.push('/admin/agenda')} className="px-4 py-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white rounded-xl font-medium shadow-md hover:shadow-lg transition-all-smooth">
+             Ver Próximas Citas
+           </button>
+        </div>
+      </div>
 
         {/* Formulario de crear tarjeta (se muestra/oculta) */}
         {showCreateCard && (
@@ -432,24 +388,22 @@ export default function AdminDashboard() {
         )}
 
         {/* Lista de Tarjetas */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between font-sans">
-              <div className="flex items-center">
-                <Star className="h-6 w-6 mr-2" />
-                Tarjetas de Fidelidad Activas
-              </div>
-              <button
+        <div className="glass-panel p-6 rounded-2xl w-full">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold flex items-center gap-2">
+              <Star className="h-6 w-6 text-[var(--secondary)]" />
+              Tarjetas de Fidelidad Activas
+            </h2>
+            <button
                 onClick={() => setShowCreateCard(!showCreateCard)}
-                className="w-10 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 hover:text-gray-700 rounded-full flex items-center justify-center transition-colors shadow-sm hover:shadow-md"
+                className="w-10 h-10 bg-[var(--surface-hover)] border border-[var(--border)] text-[var(--foreground)] rounded-full flex items-center justify-center transition-all-smooth hover:border-[var(--primary)] shadow-sm hover:shadow-md"
                 title="Nueva tarjeta"
               >
                 <Plus className="h-5 w-5" />
               </button>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {cards.length === 0 ? (
                 <div className="text-center py-8 col-span-full">
                   <Star className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -642,19 +596,24 @@ export default function AdminDashboard() {
                 ))
               )}
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Estadísticas - Movido después de las tarjetas */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="flex items-center text-lg font-sans">
-              <TrendingUp className="h-5 w-5 mr-2" />
-              Estadísticas Generales
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="glass-panel p-6 rounded-2xl w-full">
+          <h2 className="text-xl font-bold flex items-center gap-2 mb-6">
+            <TrendingUp className="h-5 w-5 text-[var(--accent)]" />
+            Estadísticas Generales
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="flex items-center">
+                <div className="w-8 h-8 bg-[var(--primary)]/10 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
+                  <CalendarIcon className="h-4 w-4 text-[var(--primary)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-gray-900 line-clamp-1">{appointments.filter(a => new Date(a.date).toDateString() === new Date().toDateString()).length}</p>
+                  <p className="text-xs text-gray-600 line-clamp-1">Citas Hoy</p>
+                </div>
+            </div>
               <div className="flex items-center">
                 <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-3 flex-shrink-0">
                   <Star className="h-4 w-4 text-blue-600" />
@@ -695,15 +654,12 @@ export default function AdminDashboard() {
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+        </div>
 
         {/* Códigos QR Generados */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="font-sans">Códigos QR Generados</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <div className="glass-panel p-6 rounded-2xl w-full">
+          <h2 className="text-xl font-bold mb-6">Códigos QR Generados</h2>
+          <div>
             {qrCodes.length === 0 ? (
               <div className="text-center py-8">
                 <QrCode className="h-16 w-16 text-gray-300 mx-auto mb-4" />
@@ -748,10 +704,8 @@ export default function AdminDashboard() {
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
-      </div>
-      
+          </div>
+        </div>
       {/* Modal de clientes de la tarjeta */}
       {showClientsModal && selectedCardForClients && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
