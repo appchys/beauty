@@ -114,7 +114,7 @@ export async function GET() {
   }
 }
 
-import { Appointment, Service, Expense } from '@/types';
+import { Appointment, Expense } from '@/types';
 
 function calculateMonthlyData(appointments: Appointment[], manualExpenses: Expense[], serviceCostsMap: Map<string, number>) {
   const months: Record<string, { month: string, income: number, expense: number, sortKey: string }> = {};

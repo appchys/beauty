@@ -1,3 +1,13 @@
+export interface Client {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  profileImage?: string;
+  createdAt: Date;
+  businessId?: string;
+}
+
 export interface User {
   id: string;
   email?: string;

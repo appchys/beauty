@@ -192,41 +192,8 @@ export default function ScanPage() {
     }
   }, []);
 
-  // Definir validateQRCode ANTES del useEffect
-  const validateQRCode = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/scan/${params.code}`);
-      const data = await response.json();
-
-      if (response.ok) {
-        setQrData(data.qrCode);
-        // Pre-fetch loyalty card info for requiredStickers
-        if (data.qrCode && data.qrCode.cardId) {
-          const loyaltyCard = await fetchLoyaltyCard(data.qrCode.cardId);
-          setQrData(prev => prev ? { ...prev, requiredStickers: loyaltyCard?.requiredStickers } : prev);
-        }
-        // Si hay cliente guardado y no requiere registro, procesarlo automáticamente
-        if (storedClient && !data.requiresRegistration) {
-          await processAutomatically();
-        } else if (storedClient && data.requiresRegistration) {
-          // Cliente guardado pero QR requiere asignación
-          await processWithStoredClient();
-        } else {
-          setShowRegistration(data.requiresRegistration);
-          if (data.requiresRegistration) setStep('phone');
-        }
-      } else {
-        setError(data.error);
-      }
-    } catch {
-      setError('Error al validar el código QR');
-    } finally {
-      setLoading(false);
-    }
-  }, [params.code, storedClient]);
-
   // Procesar automáticamente con cliente guardado
-  const processAutomatically = async () => {
+  const processAutomatically = useCallback(async () => {
     if (!storedClient) return;
     
     setProcessing(true);
@@ -264,10 +231,10 @@ export default function ScanPage() {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [params.code, qrData, storedClient]);
 
   // Procesar con cliente guardado para QR que requiere asignación
-  const processWithStoredClient = async () => {
+  const processWithStoredClient = useCallback(async () => {
     if (!storedClient) return;
     
     setProcessing(true);
@@ -304,7 +271,40 @@ export default function ScanPage() {
     } finally {
       setProcessing(false);
     }
-  };
+  }, [params.code, qrData, storedClient]);
+
+  // Definir validateQRCode ANTES del useEffect
+  const validateQRCode = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/scan/${params.code}`);
+      const data = await response.json();
+
+      if (response.ok) {
+        setQrData(data.qrCode);
+        // Pre-fetch loyalty card info for requiredStickers
+        if (data.qrCode && data.qrCode.cardId) {
+          const loyaltyCard = await fetchLoyaltyCard(data.qrCode.cardId);
+          setQrData(prev => prev ? { ...prev, requiredStickers: loyaltyCard?.requiredStickers } : prev);
+        }
+        // Si hay cliente guardado y no requiere registro, procesarlo automáticamente
+        if (storedClient && !data.requiresRegistration) {
+          await processAutomatically();
+        } else if (storedClient && data.requiresRegistration) {
+          // Cliente guardado pero QR requiere asignación
+          await processWithStoredClient();
+        } else {
+          setShowRegistration(data.requiresRegistration);
+          if (data.requiresRegistration) setStep('phone');
+        }
+      } else {
+        setError(data.error);
+      }
+    } catch {
+      setError('Error al validar el código QR');
+    } finally {
+      setLoading(false);
+    }
+  }, [params.code, storedClient, processAutomatically, processWithStoredClient]);
 
   // Ahora useEffect puede usar validateQRCode sin problemas
   useEffect(() => {
@@ -331,7 +331,7 @@ export default function ScanPage() {
       }
     };
     loadMeta();
-  }, [success, qrData?.cardId]);
+  }, [success, qrData?.cardId, qrData?.businessId]);
 
   const handleScan = async () => {
     if (step === 'name') {

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-config';
 import { getBusinessByAdminId, createExpense, getExpensesByBusinessId } from '@/lib/firestore-admin';
 
-export async function GET(_request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 

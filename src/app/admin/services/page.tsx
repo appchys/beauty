@@ -70,9 +70,7 @@ export default function ServicesPage() {
   };
 
   const handleImageUpload = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    target: 'service' = 'service',
-    itemId?: string
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = e.target.files?.[0];
     if (file) {

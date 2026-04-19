@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useParams, useRouter } from 'next/navigation';
 import { User, Calendar as CalendarIcon, Clock, ArrowLeft, Star, StarHalf } from 'lucide-react';
@@ -30,13 +30,7 @@ export default function ClientProfilePage() {
   const [data, setData] = useState<ClientDetailState>({ client: null, appointments: [], clientCards: [] });
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (session?.user?.role === 'admin' && params.clientId) {
-      fetchClientData();
-    }
-  }, [session, params.clientId]);
-
-  const fetchClientData = async () => {
+  const fetchClientData = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/clients/${params.clientId}`);
       if (res.ok) {
@@ -48,7 +42,13 @@ export default function ClientProfilePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [params.clientId]);
+
+  useEffect(() => {
+    if (session?.user?.role === 'admin' && params.clientId) {
+      fetchClientData();
+    }
+  }, [session, params.clientId, fetchClientData]);
 
   if (loading) return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-[var(--border)] rounded w-3/4"></div></div></div>;
 

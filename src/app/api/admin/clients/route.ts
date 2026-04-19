@@ -15,7 +15,7 @@ type ClientSummary = {
   isGuest?: boolean;
 };
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -143,6 +143,11 @@ export async function POST(request: Request) {
 
     if (!session || session.user.role !== 'admin') {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const business = await getBusinessByAdminId(session.user.id);
+    if (!business) {
+      return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 });
     }
 
     const data = await request.json();
