@@ -2,6 +2,24 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-config';
 import { getBusinessByAdminId, updateService, deleteService } from '@/lib/firestore-admin';
+import type { Service } from '@/types';
+
+const normalizePriceItems = (items: unknown, fallbackDuration = 60) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .map((item) => ({
+      id: typeof item.id === 'string' && item.id ? item.id : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: typeof item.name === 'string' ? item.name.trim() : '',
+      price: Number.isFinite(Number(item.price)) ? Number(item.price) : 0,
+      duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : fallbackDuration,
+      photo: typeof item.photo === 'string' ? item.photo : '',
+    }))
+    .filter((item) => item.name !== '');
+};
 
 export async function PATCH(request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
@@ -25,7 +43,21 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
     const { id } = params;
     const data = await request.json();
 
-    await updateService(id, data);
+    const updateData = {
+      ...data,
+      costs: normalizePriceItems(data.costs, data.duration),
+      variants: normalizePriceItems(data.variants, data.duration),
+    } as Partial<Service>;
+
+    if (Number.isFinite(Number(data.duration))) {
+      updateData.duration = Number(data.duration);
+    }
+
+    if (Number.isFinite(Number(data.price))) {
+      updateData.price = Number(data.price);
+    }
+
+    await updateService(id, updateData);
 
     return NextResponse.json({ success: true }, { status: 200 });
   } catch (error) {
@@ -37,7 +69,7 @@ export async function PATCH(request: Request, props: { params: Promise<{ id: str
   }
 }
 
-export async function DELETE(request: Request, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(_request: Request, props: { params: Promise<{ id: string }> }) {
   const params = await props.params;
   try {
     const session = await getServerSession(authOptions);

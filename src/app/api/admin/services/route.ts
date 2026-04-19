@@ -3,7 +3,24 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-config';
 import { getBusinessByAdminId, createService, getServicesByBusinessId } from '@/lib/firestore-admin';
 
-export async function GET(request: Request) {
+const normalizePriceItems = (items: unknown, fallbackDuration = 60) => {
+  if (!Array.isArray(items)) {
+    return [];
+  }
+
+  return items
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === 'object')
+    .map((item) => ({
+      id: typeof item.id === 'string' && item.id ? item.id : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      name: typeof item.name === 'string' ? item.name.trim() : '',
+      price: Number.isFinite(Number(item.price)) ? Number(item.price) : 0,
+      duration: Number.isFinite(Number(item.duration)) ? Number(item.duration) : fallbackDuration,
+      photo: typeof item.photo === 'string' ? item.photo : '',
+    }))
+    .filter((item) => item.name !== '');
+};
+
+export async function GET(_request: Request) {
   try {
     const session = await getServerSession(authOptions);
 
@@ -62,9 +79,10 @@ export async function POST(request: Request) {
       name: data.name,
       category: data.category || '',
       photo: data.photo || '',
-      variants: data.variants || [],
-      duration: data.duration,
-      price: data.price,
+      costs: normalizePriceItems(data.costs, data.duration),
+      variants: normalizePriceItems(data.variants, data.duration),
+      duration: Number.isFinite(Number(data.duration)) ? Number(data.duration) : 60,
+      price: Number.isFinite(Number(data.price)) ? Number(data.price) : 0,
       description: data.description || '',
       isActive: data.isActive !== undefined ? data.isActive : true,
     });

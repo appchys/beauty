@@ -144,12 +144,21 @@ export interface ServiceVariant {
   photo?: string;
 }
 
+export interface ServiceCost {
+  id: string;
+  name: string;
+  price: number;
+  duration?: number;
+  photo?: string;
+}
+
 export interface Service {
   id: string;
   businessId: string;
   name: string;
   category?: string;
   photo?: string;
+  costs?: ServiceCost[];
   variants?: ServiceVariant[];
   duration: number; // in minutes
   price: number;

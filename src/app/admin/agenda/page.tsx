@@ -345,6 +345,8 @@ export default function AgendaPage() {
                       if (val !== 'Otro') {
                         for (const s of services) {
                           if (s.name === val) { duration = s.duration; break; }
+                          const c = s.costs?.find(ct => `${s.name} - ${ct.name}` === val);
+                          if (c) { duration = c.duration || s.duration; break; }
                           const v = s.variants?.find(vr => `${s.name} - ${vr.name}` === val);
                           if (v) { duration = v.duration || s.duration; break; }
                         }
@@ -355,6 +357,11 @@ export default function AgendaPage() {
                     {services.map(s => (
                       <optgroup key={s.id} label={s.name}>
                         <option value={s.name}>{s.name} (Base) - ${s.price}</option>
+                        {s.costs?.map(c => (
+                          <option key={c.id} value={`${s.name} - ${c.name}`}>
+                            â†ª {c.name} - ${c.price}
+                          </option>
+                        ))}
                         {s.variants?.map(vr => (
                           <option key={vr.id} value={`${s.name} - ${vr.name}`}>
                             ↪ {vr.name} - ${vr.price}

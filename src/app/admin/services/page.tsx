@@ -4,8 +4,42 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Scissors, Plus, X, Edit, Trash2, Camera, Tag } from 'lucide-react';
-import { Service, ServiceVariant } from '@/types';
+import { Service, ServiceCost, ServiceVariant } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
+
+const createEmptyService = (): Partial<Service> => ({
+  name: '',
+  category: '',
+  photo: '',
+  duration: 60,
+  price: 0,
+  description: '',
+  isActive: true,
+});
+
+const createEmptyCost = (duration = 60): ServiceVariant => ({
+  id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  name: '',
+  price: 0,
+  duration,
+  photo: '',
+});
+
+const createEmptyVariant = (duration = 60): ServiceVariant => createEmptyCost(duration);
+
+const normalizePriceItems = <T extends { id: string; name: string; price: number; duration?: number; photo?: string }>(
+  items: T[],
+  fallbackDuration = 60
+) => {
+  return items
+    .filter(item => item.name.trim() !== '')
+    .map(item => ({
+      ...item,
+      name: item.name.trim(),
+      price: Number.isFinite(Number(item.price)) ? Number(item.price) : 0,
+      duration: item.duration || fallbackDuration,
+    }));
+};
 
 export default function ServicesPage() {
   const { data: session } = useSession();
@@ -13,15 +47,8 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   
-  const [formData, setFormData] = useState<Partial<Service>>({
-    name: '',
-    category: '',
-    photo: '',
-    duration: 60,
-    price: 0,
-    description: '',
-    isActive: true
-  });
+  const [formData, setFormData] = useState<Partial<Service>>(createEmptyService());
+  const [costs, setCosts] = useState<ServiceCost[]>([]);
   const [variants, setVariants] = useState<ServiceVariant[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
@@ -45,7 +72,11 @@ export default function ServicesPage() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, isVariant = false, variantId?: string) => {
+  const handleImageUpload = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    target: 'service' | 'cost' | 'variant' = 'service',
+    itemId?: string
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -65,8 +96,10 @@ export default function ServicesPage() {
           
           const base64 = canvas.toDataURL('image/jpeg', 0.6); // Comprimir para evitar límites en Firestore
           
-          if (isVariant && variantId) {
-            updateVariant(variantId, 'photo', base64);
+          if (target === 'variant' && itemId) {
+            updateVariant(itemId, 'photo', base64);
+          } else if (target === 'cost' && itemId) {
+            updateCost(itemId, 'photo', base64);
           } else {
             setFormData({ ...formData, photo: base64 });
           }
@@ -76,14 +109,20 @@ export default function ServicesPage() {
     }
   };
 
+  const addCost = () => {
+    setCosts([...costs, createEmptyCost(formData.duration || 60)]);
+  };
+
   const addVariant = () => {
-    setVariants([...variants, {
-      id: Date.now().toString(),
-      name: '',
-      price: 0,
-      duration: formData.duration || 60,
-      photo: ''
-    }]);
+    setVariants([...variants, createEmptyVariant(formData.duration || 60)]);
+  };
+
+  const updateCost = (
+    id: string,
+    field: keyof ServiceCost,
+    value: string | number | undefined
+  ) => {
+    setCosts(costs.map(c => c.id === id ? { ...c, [field]: value } : c));
   };
 
   const updateVariant = (
@@ -98,12 +137,22 @@ export default function ServicesPage() {
     setVariants(variants.filter(v => v.id !== id));
   };
 
+  const removeCost = (id: string) => {
+    setCosts(costs.filter(c => c.id !== id));
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const normalizedCosts = normalizePriceItems(costs, formData.duration || 60);
+      const normalizedVariants = normalizePriceItems(variants, formData.duration || 60);
+
       const payload = {
         ...formData,
-        variants
+        price: Number.isFinite(Number(formData.price)) ? Number(formData.price) : 0,
+        duration: Number.isFinite(Number(formData.duration)) ? Number(formData.duration) : 60,
+        costs: normalizedCosts,
+        variants: normalizedVariants
       };
 
       if (editingId) {
@@ -150,21 +199,15 @@ export default function ServicesPage() {
       description: s.description,
       isActive: s.isActive
     });
+    setCosts((s.costs || []) as ServiceCost[]);
     setVariants(s.variants || []);
     setShowModal(true);
   };
 
   const resetForm = () => {
     setEditingId(null);
-    setFormData({
-      name: '',
-      category: '',
-      photo: '',
-      duration: 60,
-      price: 0,
-      description: '',
-      isActive: true
-    });
+    setFormData(createEmptyService());
+    setCosts([]);
     setVariants([]);
   };
 
@@ -234,14 +277,31 @@ export default function ServicesPage() {
                     <p className="text-xs opacity-60 line-clamp-2 mb-4">{service.description}</p>
                   )}
 
+                  {/* Costos */}
+                  {service.costs && service.costs.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs uppercase tracking-wide opacity-50 mb-2">Costos</p>
+                      <div className="flex flex-wrap gap-2">
+                      {service.costs.map(c => (
+                        <span key={c.id} className="text-xs bg-[var(--background)] px-2 py-1 rounded-full border border-[var(--border)]">
+                          {c.name} <strong className="text-[var(--secondary)]">${c.price}</strong>
+                        </span>
+                      ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Variantes Pills */}
                   {service.variants && service.variants.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-2">
+                    <div className="mt-4">
+                      <p className="text-xs uppercase tracking-wide opacity-50 mb-2">Variantes</p>
+                      <div className="flex flex-wrap gap-2">
                       {service.variants.map(v => (
                         <span key={v.id} className="text-xs bg-[var(--background)] px-2 py-1 rounded-full border border-[var(--border)]">
                           {v.name} <strong className="text-[var(--secondary)]">${v.price}</strong>
                         </span>
                       ))}
+                      </div>
                     </div>
                   )}
 
@@ -353,22 +413,72 @@ export default function ServicesPage() {
                     value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
                 </div>
 
-                {/* 2. VARIANTES */}
+                {/* 2. COSTOS */}
                 <div className="border-t border-[var(--border)] pt-6">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold">Variantes de Servicio</h3>
+                    <div>
+                      <h3 className="text-lg font-bold">Costos del Servicio</h3>
+                      <p className="text-xs opacity-60 mt-1">Agrega uno o varios costos adicionales para este servicio.</p>
+                    </div>
+                    <button type="button" onClick={addCost} className="text-xs bg-[var(--primary)]/10 text-[var(--primary)] px-3 py-1.5 rounded-lg font-medium hover:bg-[var(--primary)]/20 transition-colors">
+                      + Añadir Costo
+                    </button>
+                  </div>
+                  
+                  {costs.length === 0 ? (
+                    <p className="text-sm opacity-50 text-center py-4 bg-[var(--surface-hover)] rounded-xl border border-dashed border-[var(--border)]">
+                      Añade costos como "Pelo Largo", "Acrilicas 2h" o "Con diseno" para tener precios especificos.
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {costs.map((cost) => (
+                        <div key={cost.id} className="flex gap-3 items-center bg-[var(--surface-hover)] p-3 rounded-xl border border-[var(--border)]">
+                          <label className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-[var(--border)] flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
+                            {cost.photo ? (
+                              <img src={cost.photo} alt="cost" className="w-full h-full object-cover" />
+                            ) : (
+                              <Camera className="w-4 h-4 opacity-50" />
+                            )}
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'cost', cost.id)} />
+                          </label>
+                          <div className="flex-1 space-y-1">
+                            <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Nombre del costo</label>
+                            <input required type="text" placeholder="Ej: Diseno 3D" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
+                              value={cost.name} onChange={e => updateCost(cost.id, 'name', e.target.value)} />
+                          </div>
+                          <div className="w-24 space-y-1">
+                            <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Precio</label>
+                            <input required type="number" min="0" placeholder="Precio" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
+                              value={cost.price} onChange={e => updateCost(cost.id, 'price', e.target.value === '' ? '' : parseFloat(e.target.value))} />
+                          </div>
+                          <button type="button" onClick={() => removeCost(cost.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. VARIANTES */}
+                <div className="border-t border-[var(--border)] pt-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="text-lg font-bold">Variantes del Servicio</h3>
+                      <p className="text-xs opacity-60 mt-1">Agrega una o varias variantes sin reemplazar los costos.</p>
+                    </div>
                     <button type="button" onClick={addVariant} className="text-xs bg-[var(--primary)]/10 text-[var(--primary)] px-3 py-1.5 rounded-lg font-medium hover:bg-[var(--primary)]/20 transition-colors">
-                      + Añadir Variante
+                      + Añadir Costo
                     </button>
                   </div>
                   
                   {variants.length === 0 ? (
                     <p className="text-sm opacity-50 text-center py-4 bg-[var(--surface-hover)] rounded-xl border border-dashed border-[var(--border)]">
-                      Añade variaciones como "Pelo Largo", "Acrílicas 2h", etc. para tener precios específicos.
+                      Añade costos como "Pelo Largo", "Acrílicas 2h", "Con diseño", etc. para tener precios específicos.
                     </p>
                   ) : (
                     <div className="space-y-3">
-                      {variants.map((variant, index) => (
+                      {variants.map((variant) => (
                         <div key={variant.id} className="flex gap-3 items-center bg-[var(--surface-hover)] p-3 rounded-xl border border-[var(--border)]">
                           
                           {/* Mini Photo Upload For Variant */}
@@ -378,15 +488,17 @@ export default function ServicesPage() {
                             ) : (
                               <Camera className="w-4 h-4 opacity-50" />
                             )}
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, true, variant.id)} />
+                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'variant', variant.id)} />
                           </label>
 
                           <div className="flex-1 space-y-1">
-                            <input required type="text" placeholder="Nombre (Ej: Diseño 3D)" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
+                            <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Nombre de la variante</label>
+                            <input required type="text" placeholder="Ej: Diseno 3D" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
                               value={variant.name} onChange={e => updateVariant(variant.id, 'name', e.target.value)} />
                           </div>
 
                           <div className="w-24 space-y-1">
+                            <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Precio</label>
                             <input required type="number" min="0" placeholder="Precio" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
                               value={variant.price} onChange={e => updateVariant(variant.id, 'price', e.target.value === '' ? '' : parseFloat(e.target.value))} />
                           </div>
