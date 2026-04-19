@@ -38,16 +38,16 @@ export async function GET(_request: Request) {
       totalExpense += exp.amount || 0;
     });
 
-    const completedAppointments = appointments.filter(app => app.status === 'completed');
+    const completedAppointments = appointments.filter(app => app?.status === 'completed');
 
     completedAppointments.forEach(app => {
       // Ingresos: Usar totalAmount si existe, sino sumar precios de serviceType
-      if (app.totalAmount) {
-        totalIncome += app.totalAmount;
+      if (app.totalAmount !== undefined && app.totalAmount !== null) {
+        totalIncome += Number(app.totalAmount);
       } else if (Array.isArray(app.serviceType)) {
         app.serviceType.forEach(service => {
-          if (typeof service !== 'string') {
-            totalIncome += service.price || 0;
+          if (service && typeof service !== 'string') {
+            totalIncome += Number(service.price || 0);
           }
         });
       }
@@ -55,7 +55,9 @@ export async function GET(_request: Request) {
       // Gastos: Sumar los costos registrados en cada servicio
       if (Array.isArray(app.serviceType)) {
         app.serviceType.forEach(service => {
+          if (!service) return;
           const serviceName = typeof service === 'string' ? service : service.name;
+          if (!serviceName) return;
           const cost = serviceCostsMap.get(serviceName) || 0;
           totalExpense += cost;
         });
@@ -117,7 +119,10 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
   
   // 1. Procesar citas
   appointments.forEach(app => {
+    if (!app || !app.date) return;
     const date = new Date(app.date);
+    if (isNaN(date.getTime())) return;
+
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const monthLabel = date.toLocaleString('es-ES', { month: 'short', year: 'numeric' });
 
@@ -126,12 +131,12 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
     }
 
     // Income
-    if (app.totalAmount) {
-      months[monthKey].income += app.totalAmount;
+    if (app.totalAmount !== undefined && app.totalAmount !== null) {
+      months[monthKey].income += Number(app.totalAmount);
     } else if (Array.isArray(app.serviceType)) {
       app.serviceType.forEach((service: any) => {
-        if (typeof service !== 'string') {
-          months[monthKey].income += service.price || 0;
+        if (service && typeof service !== 'string') {
+          months[monthKey].income += Number(service.price || 0);
         }
       });
     }
@@ -139,7 +144,9 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
     // Expense (Costos de servicio)
     if (Array.isArray(app.serviceType)) {
       app.serviceType.forEach((service: any) => {
+        if (!service) return;
         const serviceName = typeof service === 'string' ? service : service.name;
+        if (!serviceName) return;
         const cost = serviceCostsMap.get(serviceName) || 0;
         months[monthKey].expense += cost;
       });
@@ -148,7 +155,10 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
 
   // 2. Procesar gastos manuales
   manualExpenses.forEach(exp => {
+    if (!exp || !exp.date) return;
     const date = new Date(exp.date);
+    if (isNaN(date.getTime())) return;
+
     const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const monthLabel = date.toLocaleString('es-ES', { month: 'short', year: 'numeric' });
 
@@ -156,7 +166,7 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
       months[monthKey] = { month: monthLabel, income: 0, expense: 0, sortKey: monthKey };
     }
 
-    months[monthKey].expense += exp.amount || 0;
+    months[monthKey].expense += Number(exp.amount || 0);
   });
 
   // Ordenar cronológicamente por la llave YYYY-MM

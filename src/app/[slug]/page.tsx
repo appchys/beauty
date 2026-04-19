@@ -23,7 +23,7 @@ export default function PublicProfilePage() {
   
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<Business | null>(null);
-  const [services, setServices] = useState<Service[]>(null);
+  const [services, setServices] = useState<Service[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
