@@ -7,7 +7,6 @@ import {
   Plus, 
   Trash2, 
   Filter, 
-  Calendar, 
   Receipt, 
   Scissors, 
   Zap, 

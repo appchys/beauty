@@ -6,7 +6,6 @@ import Image from 'next/image';
 import { Business, Service } from '@/types';
 import { 
   Phone, 
-  Mail, 
   MapPin, 
   Calendar, 
   Scissors, 

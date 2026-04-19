@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-config';
 import { getBusinessByAdminId, getServicesByBusinessId, getAppointmentsByBusinessId, getExpensesByBusinessId } from '@/lib/firestore-admin';
 
-export async function GET(_request: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
 
@@ -87,7 +87,7 @@ export async function GET(_request: Request) {
         }
 
         if (Array.isArray(app.serviceType)) {
-          app.serviceType.forEach((service: any) => {
+          app.serviceType.forEach((service) => {
             const serviceName = typeof service === 'string' ? service : service.name;
             const price = typeof service === 'string' ? 0 : (service.price || 0);
             
@@ -114,7 +114,9 @@ export async function GET(_request: Request) {
   }
 }
 
-function calculateMonthlyData(appointments: any[], manualExpenses: any[], serviceCostsMap: Map<string, number>) {
+import { Appointment, Service, Expense } from '@/types';
+
+function calculateMonthlyData(appointments: Appointment[], manualExpenses: Expense[], serviceCostsMap: Map<string, number>) {
   const months: Record<string, { month: string, income: number, expense: number, sortKey: string }> = {};
   
   // 1. Procesar citas
@@ -134,7 +136,7 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
     if (app.totalAmount !== undefined && app.totalAmount !== null) {
       months[monthKey].income += Number(app.totalAmount);
     } else if (Array.isArray(app.serviceType)) {
-      app.serviceType.forEach((service: any) => {
+      app.serviceType.forEach((service) => {
         if (service && typeof service !== 'string') {
           months[monthKey].income += Number(service.price || 0);
         }
@@ -143,7 +145,7 @@ function calculateMonthlyData(appointments: any[], manualExpenses: any[], servic
 
     // Expense (Costos de servicio)
     if (Array.isArray(app.serviceType)) {
-      app.serviceType.forEach((service: any) => {
+      app.serviceType.forEach((service) => {
         if (!service) return;
         const serviceName = typeof service === 'string' ? service : service.name;
         if (!serviceName) return;

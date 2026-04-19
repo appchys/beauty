@@ -15,7 +15,7 @@ import {
   Loader2,
   Filter
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 interface ReportData {
@@ -42,7 +42,7 @@ export default function ReportsPage() {
   const { data: session } = useSession();
   const [data, setData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState('all'); // 'all', 'month', 'year'
+  // const [timeRange, setTimeRange] = useState('all'); // 'all', 'month', 'year'
 
   useEffect(() => {
     if (session?.user?.role === 'admin') {
@@ -317,7 +317,7 @@ export default function ReportsPage() {
         <Calendar className="w-5 h-5 text-blue-500 mt-0.5" />
         <div className="text-sm text-blue-700">
           <p className="font-bold">Información de cálculo:</p>
-          <p className="opacity-80">Los ingresos se obtienen de las citas con estado "Completada". Los gastos se calculan sumando el costo de materiales y mano de obra configurado en el catálogo de servicios para cada servicio realizado.</p>
+          <p className="opacity-80">Los ingresos se obtienen de las citas con estado &quot;Completada&quot;. Los gastos se calculan sumando el costo de materiales y mano de obra configurado en el catálogo de servicios para cada servicio realizado.</p>
         </div>
       </div>
     </div>

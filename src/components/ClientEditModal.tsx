@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { X, User, Phone, Mail, Save, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 interface ClientEditModalProps {
   isOpen: boolean;

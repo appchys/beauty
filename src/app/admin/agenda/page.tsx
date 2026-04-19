@@ -2,18 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Appointment, Service } from '@/types';
-import { Calendar as CalendarIcon, List, Clock, Plus, X, User } from 'lucide-react';
+import { Appointment, Service, Client } from '@/types';
+import { Calendar as CalendarIcon, List, Clock, Plus, X, User, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import ClientEditModal from '@/components/ClientEditModal';
-import { Settings } from 'lucide-react';
 
 export default function AgendaPage() {
   const { data: session } = useSession();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
-  const [clients, setClients] = useState<any[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'calendar' | 'timeline' | 'list'>('calendar');
   const [showModal, setShowModal] = useState(false);
@@ -287,7 +286,7 @@ export default function AgendaPage() {
                   <CardContent className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
                       <h3 className="font-bold text-lg">
-                        {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : (app.serviceType as any)?.name)}
+                        {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : '')}
                       </h3>
                       <p className="text-sm opacity-80 flex items-center gap-1 mt-1">
                         <User className="w-4 h-4" /> {app.clientName} {app.clientPhone && `(${app.clientPhone})`}
@@ -339,7 +338,7 @@ export default function AgendaPage() {
                     {new Date(app.date).toLocaleDateString()} {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </td>
                   <td className="py-3 px-4">{app.clientName}</td>
-                  <td className="py-3 px-4">{Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : (app.serviceType as any)?.name)}</td>
+                  <td className="py-3 px-4">{Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : '')}</td>
                   <td className="py-3 px-4">
                     <span className={cn("px-2 py-1 rounded-full text-xs font-medium", 
                       app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-600' :
@@ -489,7 +488,7 @@ export default function AgendaPage() {
                           className="text-xs font-bold text-[var(--primary)] hover:underline"
                           onClick={createNewClient}
                         >
-                          + Crear y registrar "{clientSearchQuery}"
+                          + Crear y registrar &quot;{clientSearchQuery}&quot;
                         </button>
                       </div>
                     )}
