@@ -22,6 +22,12 @@ type ClientDetailState = {
   clientCards: Array<ClientWithCardInfo & { cardName: string; requiredStickers: number }>;
 };
 
+function formatServiceType(serviceType: Appointment['serviceType']) {
+  return serviceType
+    .map((service) => (typeof service === 'string' ? service : service.name))
+    .join(', ');
+}
+
 export default function ClientProfilePage() {
   const { data: session } = useSession();
   const params = useParams();
@@ -115,9 +121,9 @@ export default function ClientProfilePage() {
                     "absolute -left-[31px] w-3 h-3 rounded-full border-2 border-[var(--surface)]",
                     idx === 0 ? "bg-[var(--secondary)] w-4 h-4 -left-[33px]" : "bg-[var(--primary)]"
                   )}></div>
-                  <div className="bg-[var(--surface-hover)] border border-[var(--border)] p-4 rounded-xl shadow-sm">
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="font-bold">{app.serviceType}</h3>
+                    <div className="bg-[var(--surface-hover)] border border-[var(--border)] p-4 rounded-xl shadow-sm">
+                      <div className="flex justify-between items-start mb-2">
+                      <h3 className="font-bold">{formatServiceType(app.serviceType)}</h3>
                       <span className={cn("text-xs px-2 py-1 rounded-md font-medium", 
                         app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-600' :
                         app.status === 'completed' ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'

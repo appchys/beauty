@@ -32,6 +32,9 @@ export default function ClientDashboard() {
     return `linear-gradient(135deg, ${lighter} 0%, ${color} 50%, ${darker} 100%)`;
   };
 
+  const formatServiceType = (serviceType: Appointment['serviceType']) =>
+    serviceType.map((service) => (typeof service === 'string' ? service : service.name)).join(', ');
+
   // Detectar cliente localStorage
   useEffect(() => {
     const saved = localStorage.getItem('beautyClient');
@@ -398,7 +401,7 @@ export default function ClientDashboard() {
               {appointments.slice(0, 3).map((app, idx) => (
                 <div key={idx} className="bg-[var(--surface-hover)] border border-[var(--border)] p-4 rounded-xl flex flex-col premium-shadow transition-all-smooth hover:-translate-y-1">
                   <div className="flex justify-between items-start mb-2">
-                    <span className="font-bold">{app.serviceType}</span>
+                    <span className="font-bold">{formatServiceType(app.serviceType)}</span>
                     <span className="text-xs px-2 py-1 rounded-full bg-blue-500/20 text-blue-700 font-medium">{app.status === 'pending' ? 'Pendiente' : 'Confirmada'}</span>
                   </div>
                   <div className="flex items-center text-sm opacity-80 gap-3 mt-1">

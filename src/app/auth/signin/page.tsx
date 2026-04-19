@@ -459,6 +459,7 @@ function SignInForm() {
                     confirmPassword: '',
                     name: '',
                     phone: '',
+                    slug: '',
                     role: 'client'
                   });
                 }}

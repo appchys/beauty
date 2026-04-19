@@ -12,6 +12,10 @@ export async function GET() {
     }
 
     const userId = session.user.id;
+    if (!userId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
     const business = await getBusinessByAdminId(userId);
     if (!business) {
       return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 });
