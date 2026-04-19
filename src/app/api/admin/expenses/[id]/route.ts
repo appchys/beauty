@@ -5,8 +5,9 @@ import { deleteExpense } from '@/lib/firestore-admin';
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
 
@@ -14,7 +15,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id } = params;
     await deleteExpense(id);
 
     return NextResponse.json({ message: 'Gasto eliminado' }, { status: 200 });
