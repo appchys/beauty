@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -253,7 +253,7 @@ export default function AgendaPage() {
         </div>
         <div className="overflow-x-auto pb-4">
           <div className="grid grid-cols-7 gap-px bg-[var(--border)] rounded-xl min-w-[600px] overflow-hidden">
-            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
+            {['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'].map(d => (
               <div key={d} className="bg-[var(--surface-hover)] py-2 text-center font-semibold text-sm">{d}</div>
             ))}
             {days}
@@ -273,7 +273,7 @@ export default function AgendaPage() {
       <div className="glass-panel p-6 rounded-2xl w-full max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <Clock className="text-[var(--primary)]" />
-          Agenda del Día
+          Agenda del DÃ­a
         </h2>
         {todayAppointments.length === 0 ? (
           <p className="text-center py-8 opacity-70">No hay citas programadas para hoy.</p>
@@ -363,7 +363,7 @@ export default function AgendaPage() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Gestión de Citas</h1>
+          <h1 className="text-3xl font-bold">Agenda de citas</h1>
           <p className="opacity-70 mt-1">Organiza tu agenda y próximos eventos.</p>
         </div>
         
@@ -378,7 +378,7 @@ export default function AgendaPage() {
             onClick={() => setViewMode('timeline')}
             className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'timeline' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
           >
-            <Clock className="w-4 h-4" /> Día a día
+            <Clock className="w-4 h-4" /> DÃ­a a dÃ­a
           </button>
           <button 
             onClick={() => setViewMode('list')}
@@ -482,7 +482,7 @@ export default function AgendaPage() {
                         ))
                     ) : (
                       <div className="px-4 py-3 text-center">
-                        <p className="text-sm opacity-60 mb-2">No se encontró al cliente</p>
+                        <p className="text-sm opacity-60 mb-2">No se encontrÃ³ al cliente</p>
                         <button 
                           type="button"
                           className="text-xs font-bold text-[var(--primary)] hover:underline"
@@ -629,7 +629,7 @@ export default function AgendaPage() {
             id: formData.clientId,
             name: formData.clientName,
             phone: formData.clientPhone,
-            email: '' // No lo tenemos en el sumario actual, el modal lo cargará si lo necesitas o podemos fetch
+            email: '' // No lo tenemos en el sumario actual, el modal lo cargarÃ¡ si lo necesitas o podemos fetch
           }}
           onSuccess={() => {
             fetchClients();
@@ -641,3 +641,5 @@ export default function AgendaPage() {
     </div>
   );
 }
+
+

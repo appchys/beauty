@@ -124,8 +124,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
 
         <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
-          <NavItem href="/admin" icon={LayoutDashboard} label="Dashboard General" />
-          <NavItem href="/admin/agenda" icon={Calendar} label="Agenda de Citas" />
+          <NavItem href="/admin" icon={Calendar} label="Agenda de citas" />
+          <NavItem href="/admin/tarjetas-fidelidad" icon={LayoutDashboard} label="Tarjetas de fidelidad" />
           <NavItem href="/admin/clients" icon={Users} label="Directorio de Pacientes" />
           <NavItem href="/admin/services" icon={Scissors} label="Mis Servicios" />
           <NavItem href="/admin/expenses" icon={Wallet} label="Gastos" />
