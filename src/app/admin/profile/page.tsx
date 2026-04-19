@@ -189,6 +189,32 @@ export default function AdminProfilePage() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nombre de usuario (URL pública)
+              </label>
+              <div className="flex items-center space-x-2">
+                <span className="text-gray-500 bg-gray-100 px-3 py-2 rounded-lg border border-gray-300 select-none">
+                  beauty.com/
+                </span>
+                <input
+                  type="text"
+                  value={profile?.slug || ''}
+                  onChange={(e) => {
+                    const value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                    setProfile((prev) =>
+                      prev ? { ...prev, slug: value } : prev
+                    )
+                  }}
+                  placeholder="titaravelo"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+              </div>
+              <p className="mt-1 text-xs text-gray-500">
+                Este nombre aparecerá en tu enlace público: beauty.com/{profile?.slug || 'usuario'}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Nombre del Negocio
               </label>
               <input

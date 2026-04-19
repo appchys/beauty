@@ -12,7 +12,9 @@ import {
   LogOut,
   Star,
   Menu,
-  Scissors
+  Scissors,
+  TrendingUp,
+  Wallet
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils'; // asumiendo que tienes utils, si no, usar clsx/tailwind-merge
@@ -126,6 +128,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <NavItem href="/admin/agenda" icon={Calendar} label="Agenda de Citas" />
           <NavItem href="/admin/clients" icon={Users} label="Directorio de Pacientes" />
           <NavItem href="/admin/services" icon={Scissors} label="Mis Servicios" />
+          <NavItem href="/admin/expenses" icon={Wallet} label="Gastos" />
+          <NavItem href="/admin/reports" icon={TrendingUp} label="Reportes" />
         </nav>
 
         <div className="p-4 border-t border-[var(--glass-border)]">

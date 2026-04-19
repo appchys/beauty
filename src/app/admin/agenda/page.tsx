@@ -6,34 +6,73 @@ import { Appointment, Service } from '@/types';
 import { Calendar as CalendarIcon, List, Clock, Plus, X, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import ClientEditModal from '@/components/ClientEditModal';
+import { Settings } from 'lucide-react';
 
 export default function AgendaPage() {
   const { data: session } = useSession();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [services, setServices] = useState<Service[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'calendar' | 'timeline' | 'list'>('calendar');
   const [showModal, setShowModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [clientSearchQuery, setClientSearchQuery] = useState('');
+  const [showClientDropdown, setShowClientDropdown] = useState(false);
+  const [showClientEditModal, setShowClientEditModal] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState({
     clientId: 'guest',
     clientName: '',
     clientPhone: '',
-    date: '',
-    time: '',
+    date: new Date().toISOString().split('T')[0],
+    time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
     duration: 60,
-    serviceType: '',
+    serviceType: [] as (string | { name: string, price: number })[],
+    totalAmount: 0,
     notes: ''
   });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.client-selection-container')) {
+        setShowClientDropdown(false);
+      }
+    };
+
+    if (showClientDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    } else {
+      document.removeEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showClientDropdown]);
 
   useEffect(() => {
     if (session?.user?.role === 'admin') {
       fetchAppointments();
       fetchServices();
+      fetchClients();
     }
   }, [session]);
+
+  const fetchClients = async () => {
+    try {
+      const res = await fetch('/api/admin/clients');
+      if (res.ok) {
+        const data = await res.json();
+        setClients(data.clients);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchServices = async () => {
     try {
@@ -75,12 +114,15 @@ export default function AgendaPage() {
           date: dateTime.toISOString(),
           duration: formData.duration,
           serviceType: formData.serviceType,
+          totalAmount: formData.totalAmount,
           notes: formData.notes
         })
       });
 
       if (res.ok) {
         setShowModal(false);
+        setClientSearchQuery('');
+        setShowClientDropdown(false);
         fetchAppointments();
       }
     } catch (error) {
@@ -98,6 +140,61 @@ export default function AgendaPage() {
       fetchAppointments();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const createNewClient = async () => {
+    if (!formData.clientName) return;
+    
+    try {
+      const res = await fetch('/api/admin/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.clientName,
+          phone: formData.clientPhone
+        })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        setFormData({
+          ...formData,
+          clientId: data.client.id
+        });
+        fetchClients();
+        setShowClientDropdown(false);
+      } else {
+        if (data.client) {
+          setFormData({
+            ...formData,
+            clientId: data.client.id,
+            clientName: data.client.name,
+            clientPhone: data.client.phone
+          });
+          setClientSearchQuery(data.client.name);
+          setShowClientDropdown(false);
+        }
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleAddCustomService = () => {
+    const nameInput = document.getElementById('custom-service-name') as HTMLInputElement;
+    const priceInput = document.getElementById('custom-service-price') as HTMLInputElement;
+    const name = nameInput.value.trim();
+    const price = parseFloat(priceInput.value);
+    
+    if (name && !isNaN(price)) {
+      setFormData({
+        ...formData,
+        serviceType: [...formData.serviceType.filter(s => (typeof s === 'string' ? s : s.name) !== 'custom'), { name, price }],
+        totalAmount: (formData.totalAmount || 0) + price
+      });
+      nameInput.value = '';
+      priceInput.value = '';
     }
   };
 
@@ -138,7 +235,7 @@ export default function AgendaPage() {
                 )}
                 title={`${app.serviceType} - ${app.clientName}`}
               >
-                {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} {app.clientName}
+                {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} {app.clientName} - {Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : (app.serviceType as any)?.name)}
               </div>
             ))}
           </div>
@@ -189,7 +286,9 @@ export default function AgendaPage() {
                 <Card className="bg-[var(--surface-hover)] border-[var(--border)] shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
-                      <h3 className="font-bold text-lg">{new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {app.serviceType}</h3>
+                      <h3 className="font-bold text-lg">
+                        {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - {Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : (app.serviceType as any)?.name)}
+                      </h3>
                       <p className="text-sm opacity-80 flex items-center gap-1 mt-1">
                         <User className="w-4 h-4" /> {app.clientName} {app.clientPhone && `(${app.clientPhone})`}
                       </p>
@@ -240,7 +339,7 @@ export default function AgendaPage() {
                     {new Date(app.date).toLocaleDateString()} {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                   </td>
                   <td className="py-3 px-4">{app.clientName}</td>
-                  <td className="py-3 px-4">{app.serviceType}</td>
+                  <td className="py-3 px-4">{Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : (app.serviceType as any)?.name)}</td>
                   <td className="py-3 px-4">
                     <span className={cn("px-2 py-1 rounded-full text-xs font-medium", 
                       app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-600' :
@@ -309,19 +408,95 @@ export default function AgendaPage() {
           <div className="bg-[var(--surface)] rounded-2xl w-full max-w-md overflow-hidden premium-shadow animate-fade-in-up border border-[var(--border)]">
             <div className="p-6 border-b border-[var(--border)] flex justify-between items-center bg-gradient-to-r from-[var(--primary)]/10 to-[var(--secondary)]/10">
               <h2 className="text-xl font-bold flex items-center gap-2"><CalendarIcon className="w-5 h-5 text-[var(--primary)]" /> Agendar Cita</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-[var(--border)] rounded-full transition-colors"><X className="w-5 h-5" /></button>
+              <button 
+                onClick={() => {
+                  setShowModal(false);
+                  setClientSearchQuery('');
+                  setShowClientDropdown(false);
+                }} 
+                className="p-2 hover:bg-[var(--border)] rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
             <form onSubmit={handleCreateAppointment} className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium opacity-80">Nombre del Cliente *</label>
-                <input required type="text" className="w-full px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors"
-                  value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
+              <div className="space-y-2 relative client-selection-container">
+                <label className="text-sm font-medium opacity-80">Cliente *</label>
+                <div className="relative group">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+                  <input 
+                    required 
+                    type="text" 
+                    placeholder="Busca o escribe un nombre nuevo..."
+                    className={cn(
+                      "w-full pl-10 pr-10 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors",
+                      formData.clientId !== 'guest' && "border-[var(--primary)]/30"
+                    )}
+                    value={clientSearchQuery || formData.clientName} 
+                    onChange={e => {
+                      const val = e.target.value;
+                      setClientSearchQuery(val);
+                      setFormData({...formData, clientName: val, clientId: 'guest'});
+                      setShowClientDropdown(true);
+                    }}
+                    onFocus={() => setShowClientDropdown(true)}
+                  />
+                  {formData.clientId !== 'guest' && (
+                    <button
+                      type="button"
+                      onClick={() => setShowClientEditModal(true)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-[var(--surface)] rounded-full text-[var(--primary)] transition-all-smooth"
+                      title="Editar datos del cliente"
+                    >
+                      <Settings className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {showClientDropdown && clientSearchQuery && (
+                  <div className="absolute z-60 w-full mt-1 bg-[var(--surface)] border border-[var(--border)] rounded-xl shadow-2xl max-h-60 overflow-y-auto animate-in fade-in zoom-in duration-200">
+                    {clients.filter(c => c.name?.toLowerCase().includes(clientSearchQuery.toLowerCase())).length > 0 ? (
+                      clients
+                        .filter(c => c.name?.toLowerCase().includes(clientSearchQuery.toLowerCase()))
+                        .map(client => (
+                          <button 
+                            key={client.id}
+                            type="button"
+                            className="w-full text-left px-4 py-3 hover:bg-[var(--surface-hover)] border-b border-[var(--border)] last:border-0 flex items-center justify-between group"
+                            onClick={() => {
+                              setFormData({
+                                ...formData, 
+                                clientId: client.id, 
+                                clientName: client.name || '',
+                                clientPhone: client.phone || ''
+                              });
+                              setClientSearchQuery(client.name || '');
+                              setShowClientDropdown(false);
+                            }}
+                          >
+                            <div>
+                              <p className="font-bold group-hover:text-[var(--primary)] transition-colors">{client.name}</p>
+                              {client.phone && <p className="text-xs opacity-60">{client.phone}</p>}
+                            </div>
+                            <Plus className="w-4 h-4 opacity-0 group-hover:opacity-100 text-[var(--primary)]" />
+                          </button>
+                        ))
+                    ) : (
+                      <div className="px-4 py-3 text-center">
+                        <p className="text-sm opacity-60 mb-2">No se encontró al cliente</p>
+                        <button 
+                          type="button"
+                          className="text-xs font-bold text-[var(--primary)] hover:underline"
+                          onClick={createNewClient}
+                        >
+                          + Crear y registrar "{clientSearchQuery}"
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium opacity-80">Teléfono</label>
-                <input type="tel" className="w-full px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors"
-                  value={formData.clientPhone} onChange={e => setFormData({...formData, clientPhone: e.target.value})} />
-              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium opacity-80">Fecha *</label>
@@ -335,49 +510,95 @@ export default function AgendaPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium opacity-80">Servicio *</label>
-                {services.length > 0 ? (
-                  <select required className="w-full px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors appearance-none"
-                    value={formData.serviceType} 
-                    onChange={e => {
-                      const val = e.target.value;
-                      let duration = 60;
-                      if (val !== 'Otro') {
-                        for (const s of services) {
-                          if (s.name === val) { duration = s.duration; break; }
-                          const c = s.costs?.find(ct => `${s.name} - ${ct.name}` === val);
-                          if (c) { duration = c.duration || s.duration; break; }
-                          const v = s.variants?.find(vr => `${s.name} - ${vr.name}` === val);
-                          if (v) { duration = v.duration || s.duration; break; }
+                <label className="text-sm font-medium opacity-80">Servicios *</label>
+                <select 
+                  className="w-full px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors appearance-none"
+                  value=""
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val) {
+                      const selectedService = services.find(s => s.name === val);
+                      if (selectedService && !formData.serviceType.some(s => (typeof s === 'string' ? s : s.name) === val)) {
+                        const newDuration = (formData.duration || 0) + (selectedService ? selectedService.duration : 0);
+                        const newTotal = (formData.totalAmount || 0) + (selectedService ? selectedService.price : 0);
+                        setFormData({
+                          ...formData, 
+                          serviceType: [...formData.serviceType, { name: selectedService.name, price: selectedService.price }],
+                          duration: formData.serviceType.length === 0 ? (selectedService?.duration || 60) : newDuration,
+                          totalAmount: newTotal
+                        });
+                      } else if (val === 'custom') {
+                        if (!formData.serviceType.includes('custom')) {
+                          setFormData({
+                            ...formData,
+                            serviceType: [...formData.serviceType, 'custom']
+                          });
                         }
                       }
-                      setFormData({...formData, serviceType: val, duration});
-                    }}>
-                    <option value="" disabled>Selecciona un servicio</option>
-                    {services.map(s => (
-                      <optgroup key={s.id} label={s.name}>
-                        <option value={s.name}>{s.name} (Base) - ${s.price}</option>
-                        {s.costs?.map(c => (
-                          <option key={c.id} value={`${s.name} - ${c.name}`}>
-                            â†ª {c.name} - ${c.price}
-                          </option>
-                        ))}
-                        {s.variants?.map(vr => (
-                          <option key={vr.id} value={`${s.name} - ${vr.name}`}>
-                            ↪ {vr.name} - ${vr.price}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                    <option value="Otro">Otro (Personalizado)</option>
-                  </select>
-                ) : (
-                  <input required type="text" placeholder="Ej: Manicura, Corte de pelo..." className="w-full px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors"
-                    value={formData.serviceType} onChange={e => setFormData({...formData, serviceType: e.target.value})} />
-                )}
-                {formData.serviceType === 'Otro' && (
-                  <input required type="text" placeholder="Escribe el servicio personalizado..." className="w-full mt-2 px-4 py-2.5 rounded-lg bg-[var(--surface-hover)] border border-[var(--border)] focus:border-[var(--primary)] focus:outline-none transition-colors"
-                    onChange={e => setFormData({...formData, serviceType: e.target.value})} />
+                    }
+                  }}
+                >
+                  <option value="" disabled>Agregar un servicio...</option>
+                  {services.map(s => (
+                    <option key={s.id} value={s.name}>{s.name} (${s.price})</option>
+                  ))}
+                  <option value="custom">+ Servicio Personalizado</option>
+                </select>
+
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {formData.serviceType.map((service, idx) => {
+                    if (service === 'custom') return null; // No mostrar el placeholder como tag
+                    const name = typeof service === 'string' ? service : service.name;
+                    const price = typeof service === 'string' ? 0 : service.price;
+                    return (
+                      <span key={idx} className="bg-white border border-[var(--border)] text-[var(--foreground)] px-3 py-1.5 rounded-xl text-xs font-medium flex items-center gap-2 shadow-sm animate-in zoom-in duration-200">
+                        <span className="font-bold text-[var(--primary)]">{name}</span>
+                        <span className="opacity-50">${price}</span>
+                        <button 
+                          type="button" 
+                          onClick={() => {
+                            const newServices = formData.serviceType.filter((_, i) => i !== idx);
+                            const removedPrice = typeof service === 'string' ? 0 : service.price;
+                            setFormData({
+                              ...formData, 
+                              serviceType: newServices,
+                              totalAmount: (formData.totalAmount || 0) - removedPrice
+                            });
+                          }}
+                          className="hover:text-red-500 transition-colors p-0.5 hover:bg-gray-100 rounded-full"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {formData.serviceType.some(s => (typeof s === 'string' ? s : s.name) === 'custom') && (
+                  <div className="mt-2 space-y-2 animate-in slide-in-from-top-2 duration-200">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input 
+                        type="text" 
+                        id="custom-service-name"
+                        placeholder="Nombre del servicio..." 
+                        className="px-4 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--primary)]/50 focus:outline-none transition-colors text-sm"
+                      />
+                      <input 
+                        type="number" 
+                        id="custom-service-price"
+                        placeholder="Precio..." 
+                        className="px-4 py-2 rounded-lg bg-[var(--surface-hover)] border border-[var(--primary)]/50 focus:outline-none transition-colors text-sm"
+                        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddCustomService(); } }}
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={handleAddCustomService}
+                      className="w-full bg-[var(--primary)] text-white py-2 rounded-lg text-sm font-bold shadow-md hover:bg-[var(--primary)]/90 transition-colors"
+                    >
+                      + Agregar este servicio
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="space-y-2">
@@ -386,12 +607,37 @@ export default function AgendaPage() {
                   value={formData.notes} onChange={e => setFormData({...formData, notes: e.target.value})}></textarea>
               </div>
               
-              <div className="pt-4 flex gap-3">
-                <button type="submit" className="flex-1 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white font-medium py-3 rounded-lg hover:shadow-lg transition-all-smooth">Confirmar Cita</button>
+              <div className="pt-4 border-t border-[var(--border)] flex flex-col gap-4">
+                <div className="flex justify-between items-center bg-[var(--primary)]/5 p-4 rounded-xl">
+                  <span className="font-bold opacity-70 text-sm">Valor Total Estimado:</span>
+                  <span className="text-2xl font-black text-[var(--primary)]">${formData.totalAmount}</span>
+                </div>
+                <button type="submit" className="w-full bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white font-bold py-4 rounded-xl hover:shadow-lg transition-all-smooth active:scale-95 shadow-purple-500/20">
+                  Confirmar Cita
+                </button>
               </div>
             </form>
           </div>
         </div>
+      )}
+
+      {/* Reusable Client Edit Modal */}
+      {formData.clientId !== 'guest' && (
+        <ClientEditModal 
+          isOpen={showClientEditModal}
+          onClose={() => setShowClientEditModal(false)}
+          client={{
+            id: formData.clientId,
+            name: formData.clientName,
+            phone: formData.clientPhone,
+            email: '' // No lo tenemos en el sumario actual, el modal lo cargará si lo necesitas o podemos fetch
+          }}
+          onSuccess={() => {
+            fetchClients();
+            // Upate current form if name or phone changed
+            // This is simple here because fetchClients will update the background list
+          }}
+        />
       )}
     </div>
   );

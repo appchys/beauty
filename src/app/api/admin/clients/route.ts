@@ -70,8 +70,28 @@ export async function GET(request: Request) {
       if (data.clientId) clientIds.add(data.clientId);
     });
 
-    // Fetch user profiles for these IDs
+    // Fetch user profiles for these IDs OR users that were created by this business directly
     const clients: ClientSummary[] = [];
+
+    // 1. Get clients from business collection (manually created)
+    const manualClientsSnap = await adminDb.collection('users')
+      .where('businessId', '==', business.id)
+      .get();
+    
+    manualClientsSnap.docs.forEach(doc => {
+      const data = doc.data();
+      clients.push({
+        id: doc.id,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        profileImage: data.profileImage,
+        createdAt: data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+      });
+      // De-duplicate if needed
+      clientIds.delete(doc.id);
+    });
+
     if (clientIds.size > 0) {
       const idsArray = Array.from(clientIds);
       const batches: Promise<QuerySnapshot<DocumentData>>[] = [];
@@ -112,6 +132,59 @@ export async function GET(request: Request) {
     console.error('Error fetching clients:', error);
     return NextResponse.json(
       { error: 'Error al obtener clientes' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const data = await request.json();
+    if (!data.name) {
+      return NextResponse.json({ error: 'El nombre es requerido' }, { status: 400 });
+    }
+
+    const adminDb = getAdminDb();
+    
+    // Check if user with same phone already exists
+    if (data.phone) {
+      const existingSnap = await adminDb.collection('users').where('phone', '==', data.phone).get();
+      if (!existingSnap.empty) {
+        return NextResponse.json({ 
+          error: 'Ya existe un cliente con este teléfono',
+          client: existingSnap.docs[0].data() 
+        }, { status: 400 });
+      }
+    }
+
+    const { v4: uuidv4 } = await import('uuid');
+    const clientId = uuidv4();
+    const now = new Date();
+
+    const newClient = {
+      id: clientId,
+      name: data.name,
+      phone: data.phone || '',
+      email: data.email || '',
+      role: 'client',
+      businessId: business.id, // VINCULAR AL NEGOCIO ACTUAL
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    await adminDb.collection('users').doc(clientId).set(newClient);
+
+    return NextResponse.json({ client: newClient }, { status: 201 });
+  } catch (error) {
+    console.error('Error creating client:', error);
+    return NextResponse.json(
+      { error: 'Error al crear el cliente' },
       { status: 500 }
     );
   }

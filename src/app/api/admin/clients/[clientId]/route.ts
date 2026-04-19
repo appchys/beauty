@@ -139,3 +139,39 @@ export async function GET(request: Request, props: { params: Promise<{ clientId:
     );
   }
 }
+
+export async function PATCH(request: Request, props: { params: Promise<{ clientId: string }> }) {
+  const params = await props.params;
+  try {
+    const session = await getServerSession(authOptions);
+
+    if (!session || session.user.role !== 'admin') {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+    }
+
+    const { clientId } = params;
+    const data = await request.json();
+    const adminDb = getAdminDb();
+
+    const allowedFields = ['name', 'email', 'phone', 'profileImage'];
+    const updateData: Record<string, unknown> = {
+      updatedAt: new Date()
+    };
+
+    allowedFields.forEach(field => {
+      if (data[field] !== undefined) {
+        updateData[field] = data[field];
+      }
+    });
+
+    await adminDb.collection('users').doc(clientId).update(updateData);
+
+    return NextResponse.json({ success: true, message: 'Cliente actualizado correctamente' });
+  } catch (error) {
+    console.error('Error updating client:', error);
+    return NextResponse.json(
+      { error: 'Error al actualizar cliente' },
+      { status: 500 }
+    );
+  }
+}

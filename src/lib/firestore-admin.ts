@@ -9,7 +9,8 @@ import {
   DashboardStats,
   ClientProgress,
   Appointment,
-  Service
+  Service,
+  Expense
 } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -283,7 +284,7 @@ export async function getDashboardStats(businessId: string): Promise<DashboardSt
     adminDb.collection('appointments')
       .where('businessId', '==', businessId)
       .where('date', '>=', today)
-      .orderBy('date', 'asc')
+      
       .limit(10)
       .get()
   ]);
@@ -341,7 +342,7 @@ export async function getAppointmentsByBusinessId(businessId: string): Promise<A
   const adminDb = getAdminDb();
   const snapshot = await adminDb.collection('appointments')
     .where('businessId', '==', businessId)
-    .orderBy('date', 'asc')
+    
     .get();
   
   const docs = snapshot.docs.map(doc => {
@@ -354,7 +355,7 @@ export async function getAppointmentsByBusinessId(businessId: string): Promise<A
     } as Appointment;
   });
 
-  return docs;
+  return docs.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 export async function getAppointmentsByClientId(clientId: string): Promise<Appointment[]> {
@@ -425,4 +426,40 @@ export async function updateService(serviceId: string, updateData: Partial<Servi
 export async function deleteService(serviceId: string): Promise<void> {
   const adminDb = getAdminDb();
   await adminDb.collection('services').doc(serviceId).delete();
+}
+
+// Expense functions
+export async function createExpense(expenseData: Omit<Expense, 'id' | 'createdAt' | 'updatedAt'>): Promise<Expense> {
+  const expense: Expense = {
+    ...expenseData,
+    id: uuidv4(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+  
+  const adminDb = getAdminDb();
+  await adminDb.collection('expenses').doc(expense.id).set(expense);
+  return expense;
+}
+
+export async function getExpensesByBusinessId(businessId: string): Promise<Expense[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('expenses')
+    .where('businessId', '==', businessId)
+    .get();
+  
+  return snapshot.docs.map(doc => {
+    const data = doc.data();
+    return {
+      ...data,
+      date: data.date.toDate ? data.date.toDate() : new Date(data.date),
+      createdAt: data.createdAt?.toDate ? data.createdAt?.toDate() : new Date(data.createdAt || Date.now()),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt?.toDate() : new Date(data.updatedAt || Date.now())
+    } as Expense;
+  }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
+
+export async function deleteExpense(expenseId: string): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('expenses').doc(expenseId).delete();
 }

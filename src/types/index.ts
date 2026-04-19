@@ -14,6 +14,7 @@ export interface User {
 export interface Business {
   id: string;
   name: string;
+  slug?: string; // Nombre de usuario para URL pública
   description?: string;
   logo?: string;
   logoUrl?: string; // URL de la imagen/logo
@@ -129,7 +130,8 @@ export interface Appointment {
   clientPhone?: string;
   date: Date;
   duration: number; // in minutes
-  serviceType: string;
+  serviceType: (string | { name: string, price: number })[];
+  totalAmount?: number;
   status: 'pending' | 'completed' | 'cancelled' | 'no_show';
   notes?: string;
   createdAt: Date;
@@ -164,6 +166,19 @@ export interface Service {
   price: number;
   description?: string;
   isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Expense {
+  id: string;
+  businessId: string;
+  name: string;
+  amount: number;
+  category: 'servicios_basicos' | 'alquiler' | 'insumos' | 'nomina' | 'otros' | 'servicio_cita';
+  date: Date;
+  notes?: string;
+  appointmentId?: string; // Si viene de una cita
   createdAt: Date;
   updatedAt: Date;
 }

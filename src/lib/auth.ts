@@ -27,6 +27,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: 'Password', type: 'password' },
         name: { label: 'Name', type: 'text' },
         phone: { label: 'Phone', type: 'text' },
+        slug: { label: 'Slug', type: 'text' },
         role: { label: 'Role', type: 'text' },
         action: { label: 'Action', type: 'text' },
       },
@@ -81,6 +82,7 @@ export const authOptions: NextAuthOptions = {
                   address: 'Dirección por definir',
                   phone: 'Teléfono por definir',
                   email: credentials.email,
+                  slug: credentials.slug || credentials.name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, ''),
                 });
                 console.log('Negocio creado exitosamente:', business);
               } catch (businessError) {

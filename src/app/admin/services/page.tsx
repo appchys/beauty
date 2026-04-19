@@ -22,10 +22,8 @@ const createEmptyCost = (duration = 60): ServiceVariant => ({
   name: '',
   price: 0,
   duration,
-  photo: '',
 });
 
-const createEmptyVariant = (duration = 60): ServiceVariant => createEmptyCost(duration);
 
 const normalizePriceItems = <T extends { id: string; name: string; price: number; duration?: number; photo?: string }>(
   items: T[],
@@ -49,7 +47,6 @@ export default function ServicesPage() {
   
   const [formData, setFormData] = useState<Partial<Service>>(createEmptyService());
   const [costs, setCosts] = useState<ServiceCost[]>([]);
-  const [variants, setVariants] = useState<ServiceVariant[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -74,7 +71,7 @@ export default function ServicesPage() {
 
   const handleImageUpload = (
     e: React.ChangeEvent<HTMLInputElement>,
-    target: 'service' | 'cost' | 'variant' = 'service',
+    target: 'service' = 'service',
     itemId?: string
   ) => {
     const file = e.target.files?.[0];
@@ -96,13 +93,7 @@ export default function ServicesPage() {
           
           const base64 = canvas.toDataURL('image/jpeg', 0.6); // Comprimir para evitar límites en Firestore
           
-          if (target === 'variant' && itemId) {
-            updateVariant(itemId, 'photo', base64);
-          } else if (target === 'cost' && itemId) {
-            updateCost(itemId, 'photo', base64);
-          } else {
-            setFormData({ ...formData, photo: base64 });
-          }
+          setFormData({ ...formData, photo: base64 });
         };
       };
       reader.readAsDataURL(file);
@@ -113,9 +104,6 @@ export default function ServicesPage() {
     setCosts([...costs, createEmptyCost(formData.duration || 60)]);
   };
 
-  const addVariant = () => {
-    setVariants([...variants, createEmptyVariant(formData.duration || 60)]);
-  };
 
   const updateCost = (
     id: string,
@@ -125,17 +113,7 @@ export default function ServicesPage() {
     setCosts(costs.map(c => c.id === id ? { ...c, [field]: value } : c));
   };
 
-  const updateVariant = (
-    id: string,
-    field: keyof ServiceVariant,
-    value: string | number | undefined
-  ) => {
-    setVariants(variants.map(v => v.id === id ? { ...v, [field]: value } : v));
-  };
 
-  const removeVariant = (id: string) => {
-    setVariants(variants.filter(v => v.id !== id));
-  };
 
   const removeCost = (id: string) => {
     setCosts(costs.filter(c => c.id !== id));
@@ -145,14 +123,12 @@ export default function ServicesPage() {
     e.preventDefault();
     try {
       const normalizedCosts = normalizePriceItems(costs, formData.duration || 60);
-      const normalizedVariants = normalizePriceItems(variants, formData.duration || 60);
 
       const payload = {
         ...formData,
         price: Number.isFinite(Number(formData.price)) ? Number(formData.price) : 0,
         duration: Number.isFinite(Number(formData.duration)) ? Number(formData.duration) : 60,
-        costs: normalizedCosts,
-        variants: normalizedVariants
+        costs: normalizedCosts
       };
 
       if (editingId) {
@@ -200,7 +176,6 @@ export default function ServicesPage() {
       isActive: s.isActive
     });
     setCosts((s.costs || []) as ServiceCost[]);
-    setVariants(s.variants || []);
     setShowModal(true);
   };
 
@@ -208,7 +183,6 @@ export default function ServicesPage() {
     setEditingId(null);
     setFormData(createEmptyService());
     setCosts([]);
-    setVariants([]);
   };
 
   // Extraer categorías únicas para el datalist o filtro
@@ -267,47 +241,21 @@ export default function ServicesPage() {
 
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2 text-[var(--foreground)]">
-                    <h3 className="text-lg font-bold truncate pr-8" title={service.name}>{service.name}</h3>
+                    <h3 className="text-lg font-bold truncate pr-16" title={service.name}>{service.name}</h3>
+                    <span className="font-bold text-[var(--primary)] text-lg">${service.price}</span>
                   </div>
-                  <div className="flex justify-between items-center text-sm mb-4">
+                  <div className="flex items-center text-sm mb-4">
                     <span className="opacity-70">{service.duration} mins</span>
-                    <span className="font-bold text-[var(--primary)]">${service.price}</span>
                   </div>
                   {service.description && (
                     <p className="text-xs opacity-60 line-clamp-2 mb-4">{service.description}</p>
                   )}
 
-                  {/* Costos */}
-                  {service.costs && service.costs.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-xs uppercase tracking-wide opacity-50 mb-2">Costos</p>
-                      <div className="flex flex-wrap gap-2">
-                      {service.costs.map(c => (
-                        <span key={c.id} className="text-xs bg-[var(--background)] px-2 py-1 rounded-full border border-[var(--border)]">
-                          {c.name} <strong className="text-[var(--secondary)]">${c.price}</strong>
-                        </span>
-                      ))}
-                      </div>
-                    </div>
-                  )}
+                  
 
-                  {/* Variantes Pills */}
-                  {service.variants && service.variants.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-xs uppercase tracking-wide opacity-50 mb-2">Variantes</p>
-                      <div className="flex flex-wrap gap-2">
-                      {service.variants.map(v => (
-                        <span key={v.id} className="text-xs bg-[var(--background)] px-2 py-1 rounded-full border border-[var(--border)]">
-                          {v.name} <strong className="text-[var(--secondary)]">${v.price}</strong>
-                        </span>
-                      ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => openEdit(service)} className="p-2 rounded-lg bg-white/10 backdrop-blur-md text-blue-500 hover:bg-blue-500/20 shadow"><Edit className="w-4 h-4"/></button>
-                    <button onClick={() => handleDelete(service.id)} className="p-2 rounded-lg bg-white/10 backdrop-blur-md text-red-500 hover:bg-red-500/20 shadow"><Trash2 className="w-4 h-4"/></button>
+                  <div className="absolute bottom-4 right-4 flex gap-2">
+                    <button onClick={() => openEdit(service)} className="p-2 rounded-lg bg-white/10 backdrop-blur-md text-blue-500 hover:bg-blue-500/20 shadow transition-all hover:scale-105"><Edit className="w-4 h-4"/></button>
+                    <button onClick={() => handleDelete(service.id)} className="p-2 rounded-lg bg-white/10 backdrop-blur-md text-red-500 hover:bg-red-500/20 shadow transition-all hover:scale-105"><Trash2 className="w-4 h-4"/></button>
                   </div>
                 </CardContent>
               </Card>
@@ -413,7 +361,8 @@ export default function ServicesPage() {
                     value={formData.description} onChange={e => setFormData({...formData, description: e.target.value})}></textarea>
                 </div>
 
-                {/* 2. COSTOS */}
+
+                {/* 3. COSTOS */}
                 <div className="border-t border-[var(--border)] pt-6">
                   <div className="flex justify-between items-center mb-4">
                     <div>
@@ -433,14 +382,6 @@ export default function ServicesPage() {
                     <div className="space-y-3">
                       {costs.map((cost) => (
                         <div key={cost.id} className="flex gap-3 items-center bg-[var(--surface-hover)] p-3 rounded-xl border border-[var(--border)]">
-                          <label className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-[var(--border)] flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                            {cost.photo ? (
-                              <img src={cost.photo} alt="cost" className="w-full h-full object-cover" />
-                            ) : (
-                              <Camera className="w-4 h-4 opacity-50" />
-                            )}
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'cost', cost.id)} />
-                          </label>
                           <div className="flex-1 space-y-1">
                             <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Nombre del costo</label>
                             <input required type="text" placeholder="Ej: Diseno 3D" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
@@ -452,58 +393,6 @@ export default function ServicesPage() {
                               value={cost.price} onChange={e => updateCost(cost.id, 'price', e.target.value === '' ? '' : parseFloat(e.target.value))} />
                           </div>
                           <button type="button" onClick={() => removeCost(cost.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. VARIANTES */}
-                <div className="border-t border-[var(--border)] pt-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="text-lg font-bold">Variantes del Servicio</h3>
-                      <p className="text-xs opacity-60 mt-1">Agrega una o varias variantes sin reemplazar los costos.</p>
-                    </div>
-                    <button type="button" onClick={addVariant} className="text-xs bg-[var(--primary)]/10 text-[var(--primary)] px-3 py-1.5 rounded-lg font-medium hover:bg-[var(--primary)]/20 transition-colors">
-                      + Añadir Costo
-                    </button>
-                  </div>
-                  
-                  {variants.length === 0 ? (
-                    <p className="text-sm opacity-50 text-center py-4 bg-[var(--surface-hover)] rounded-xl border border-dashed border-[var(--border)]">
-                      Añade costos como "Pelo Largo", "Acrílicas 2h", "Con diseño", etc. para tener precios específicos.
-                    </p>
-                  ) : (
-                    <div className="space-y-3">
-                      {variants.map((variant) => (
-                        <div key={variant.id} className="flex gap-3 items-center bg-[var(--surface-hover)] p-3 rounded-xl border border-[var(--border)]">
-                          
-                          {/* Mini Photo Upload For Variant */}
-                          <label className="w-12 h-12 shrink-0 rounded-lg overflow-hidden bg-[var(--border)] flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity">
-                            {variant.photo ? (
-                              <img src={variant.photo} alt="var" className="w-full h-full object-cover" />
-                            ) : (
-                              <Camera className="w-4 h-4 opacity-50" />
-                            )}
-                            <input type="file" accept="image/*" className="hidden" onChange={e => handleImageUpload(e, 'variant', variant.id)} />
-                          </label>
-
-                          <div className="flex-1 space-y-1">
-                            <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Nombre de la variante</label>
-                            <input required type="text" placeholder="Ej: Diseno 3D" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
-                              value={variant.name} onChange={e => updateVariant(variant.id, 'name', e.target.value)} />
-                          </div>
-
-                          <div className="w-24 space-y-1">
-                            <label className="block text-[11px] uppercase tracking-wide opacity-50 mb-1">Precio</label>
-                            <input required type="number" min="0" placeholder="Precio" className="w-full px-3 py-1.5 rounded-md bg-[var(--surface)] text-sm border border-[var(--border)] focus:border-[var(--primary)] outline-none"
-                              value={variant.price} onChange={e => updateVariant(variant.id, 'price', e.target.value === '' ? '' : parseFloat(e.target.value))} />
-                          </div>
-
-                          <button type="button" onClick={() => removeVariant(variant.id)} className="p-2 text-red-500 hover:bg-red-500/10 rounded-lg transition-colors">
                             <X className="w-4 h-4" />
                           </button>
                         </div>

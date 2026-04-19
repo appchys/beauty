@@ -44,9 +44,20 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Negocio no encontrado' }, { status: 404 });
     }
 
+    const slug = data.slug?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '') || '';
+    
+    // Validar slug si se proporciona
+    if (slug) {
+      const isAvailable = await import('@/lib/store-profile').then(m => m.checkSlugAvailability(slug, currentBusiness.id));
+      if (!isAvailable) {
+        return NextResponse.json({ error: 'El nombre de usuario ya está en uso' }, { status: 400 });
+      }
+    }
+
     // Update only allowed fields
     const updateData = {
       name: data.name.trim(),
+      slug: slug,
       description: data.description?.trim() || '',
       address: data.address?.trim() || '',
       phone: data.phone?.trim() || '',
