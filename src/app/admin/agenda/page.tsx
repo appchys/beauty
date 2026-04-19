@@ -234,7 +234,7 @@ export default function AgendaPage() {
                 )}
                 title={`${app.serviceType} - ${app.clientName}`}
               >
-                {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} {app.clientName} - {Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : (app.serviceType as any)?.name)}
+                {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} {app.clientName} - {Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : '')}
               </div>
             ))}
           </div>
