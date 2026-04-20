@@ -146,7 +146,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content Area */}
       <main className="flex-1 transition-all-smooth overflow-y-auto h-screen md:ml-72">
-        <div className="p-4 md:p-8 w-full max-w-7xl mx-auto animate-fade-in-up pb-20 md:pb-8">
+        <div className="p-4 md:p-8 w-full max-w-7xl mx-auto pb-20 md:pb-8">
           {children}
         </div>
       </main>

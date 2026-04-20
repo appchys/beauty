@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
@@ -14,7 +14,7 @@ export default function AgendaPage() {
   const [services, setServices] = useState<Service[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'calendar' | 'timeline' | 'list'>('calendar');
+  const [viewMode, setViewMode] = useState<'calendar' | 'timeline' | 'list'>('timeline');
   const [showModal, setShowModal] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [clientSearchQuery, setClientSearchQuery] = useState('');
@@ -253,7 +253,7 @@ export default function AgendaPage() {
         </div>
         <div className="overflow-x-auto pb-4">
           <div className="grid grid-cols-7 gap-px bg-[var(--border)] rounded-xl min-w-[600px] overflow-hidden">
-            {['Dom', 'Lun', 'Mar', 'MiÃ©', 'Jue', 'Vie', 'SÃ¡b'].map(d => (
+            {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => (
               <div key={d} className="bg-[var(--surface-hover)] py-2 text-center font-semibold text-sm">{d}</div>
             ))}
             {days}
@@ -273,7 +273,7 @@ export default function AgendaPage() {
       <div className="glass-panel p-6 rounded-2xl w-full max-w-3xl mx-auto">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <Clock className="text-[var(--primary)]" />
-          Agenda del DÃ­a
+          Agenda del Día
         </h2>
         {todayAppointments.length === 0 ? (
           <p className="text-center py-8 opacity-70">No hay citas programadas para hoy.</p>
@@ -369,16 +369,16 @@ export default function AgendaPage() {
         
         <div className="flex space-x-2 bg-[var(--surface-hover)] p-1 rounded-xl border border-[var(--border)]">
           <button 
+            onClick={() => setViewMode('timeline')}
+            className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'timeline' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
+          >
+            <Clock className="w-4 h-4" /> Agenda
+          </button>
+          <button 
             onClick={() => setViewMode('calendar')}
             className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'calendar' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
           >
             <CalendarIcon className="w-4 h-4" /> Calendario
-          </button>
-          <button 
-            onClick={() => setViewMode('timeline')}
-            className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'timeline' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
-          >
-            <Clock className="w-4 h-4" /> DÃ­a a dÃ­a
           </button>
           <button 
             onClick={() => setViewMode('list')}
@@ -388,12 +388,6 @@ export default function AgendaPage() {
           </button>
         </div>
 
-        <button 
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white px-5 py-2.5 rounded-xl hover:shadow-lg transition-all-smooth font-medium"
-        >
-          <Plus className="w-5 h-5" /> Nueva Cita
-        </button>
       </div>
 
       <div className="animate-fade-in-up">
@@ -401,6 +395,15 @@ export default function AgendaPage() {
         {viewMode === 'timeline' && renderTimeline()}
         {viewMode === 'list' && renderList()}
       </div>
+
+      {/* Floating Action Button */}
+      <button 
+        onClick={() => setShowModal(true)}
+        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all-smooth hover:scale-110 active:scale-95 z-40 group"
+        title="Nueva Cita"
+      >
+        <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
+      </button>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -482,7 +485,7 @@ export default function AgendaPage() {
                         ))
                     ) : (
                       <div className="px-4 py-3 text-center">
-                        <p className="text-sm opacity-60 mb-2">No se encontrÃ³ al cliente</p>
+                        <p className="text-sm opacity-60 mb-2">No se encontró al cliente</p>
                         <button 
                           type="button"
                           className="text-xs font-bold text-[var(--primary)] hover:underline"
@@ -629,7 +632,7 @@ export default function AgendaPage() {
             id: formData.clientId,
             name: formData.clientName,
             phone: formData.clientPhone,
-            email: '' // No lo tenemos en el sumario actual, el modal lo cargarÃ¡ si lo necesitas o podemos fetch
+            email: '' // No lo tenemos en el sumario actual, el modal lo cargará si lo necesitas o podemos fetch
           }}
           onSuccess={() => {
             fetchClients();
