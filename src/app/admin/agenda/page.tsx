@@ -314,45 +314,66 @@ export default function AgendaPage() {
   };
 
   const renderList = () => {
-    // List all
+    // Group appointments by date
+    const groupedAppointments = appointments.slice().reverse().reduce((groups, appointment) => {
+      const date = new Date(appointment.date).toLocaleDateString();
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(appointment);
+      return groups;
+    }, {} as Record<string, Appointment[]>);
+
     return (
       <div className="glass-panel p-6 rounded-2xl w-full">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <List className="text-[var(--primary)]" />
           Historial Completo
         </h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-[var(--border)] text-sm opacity-70">
-                <th className="py-3 px-4">Fecha y Hora</th>
-                <th className="py-3 px-4">Cliente</th>
-                <th className="py-3 px-4">Servicio</th>
-                <th className="py-3 px-4">Estado</th>
-              </tr>
-            </thead>
-            <tbody>
-              {appointments.slice().reverse().map(app => (
-                <tr key={app.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors">
-                  <td className="py-3 px-4">
-                    {new Date(app.date).toLocaleDateString()} {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                  </td>
-                  <td className="py-3 px-4">{app.clientName}</td>
-                  <td className="py-3 px-4">{Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : '')}</td>
-                  <td className="py-3 px-4">
-                    <span className={cn("px-2 py-1 rounded-full text-xs font-medium", 
-                      app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-600' :
-                      app.status === 'completed' ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'
-                    )}>
-                      {app.status === 'pending' ? 'Pendiente' : app.status === 'completed' ? 'Completado' : 'Cancelado'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {appointments.length === 0 && <p className="text-center py-8 opacity-70">No hay citas registradas.</p>}
-        </div>
+        {appointments.length === 0 ? (
+          <p className="text-center py-8 opacity-70">No hay citas registradas.</p>
+        ) : (
+          <div className="space-y-6">
+            {Object.entries(groupedAppointments).map(([date, dateAppointments]) => (
+              <div key={date}>
+                <h3 className="text-lg font-semibold mb-3 text-[var(--primary)] border-b border-[var(--border)] pb-2">
+                  {date}
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-[var(--border)] text-sm opacity-70">
+                        <th className="py-3 px-4">Hora</th>
+                        <th className="py-3 px-4">Cliente</th>
+                        <th className="py-3 px-4">Servicio</th>
+                        <th className="py-3 px-4">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {dateAppointments.map(app => (
+                        <tr key={app.id} className="border-b border-[var(--border)] hover:bg-[var(--surface-hover)] transition-colors">
+                          <td className="py-3 px-4">
+                            {new Date(app.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          </td>
+                          <td className="py-3 px-4">{app.clientName}</td>
+                          <td className="py-3 px-4">{Array.isArray(app.serviceType) ? app.serviceType.map(s => typeof s === 'string' ? s : s.name).join(', ') : (typeof app.serviceType === 'string' ? app.serviceType : '')}</td>
+                          <td className="py-3 px-4">
+                            <span className={cn("px-2 py-1 rounded-full text-xs font-medium", 
+                              app.status === 'pending' ? 'bg-yellow-500/20 text-yellow-600' :
+                              app.status === 'completed' ? 'bg-green-500/20 text-green-600' : 'bg-red-500/20 text-red-600'
+                            )}>
+                              {app.status === 'pending' ? 'Pendiente' : app.status === 'completed' ? 'Completado' : 'Cancelado'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   };

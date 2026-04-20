@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Users, Search, ChevronRight, User as UserIcon } from 'lucide-react';
-import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
+import ClientEditModal from '@/components/ClientEditModal';
 
 type ClientListItem = {
   id: string;
@@ -13,6 +13,16 @@ type ClientListItem = {
   phone?: string;
   profileImage?: string;
   isGuest?: boolean;
+  eyeSize?: string;
+  eyeShape?: string;
+  eyeAxis?: string;
+  eyelidType?: string;
+  eyeLocation?: string;
+  eyeDepth?: string;
+  lashThickness?: string;
+  lashCurvature?: string;
+  lashLength?: string;
+  lashColor?: string;
 };
 
 export default function ClientsPage() {
@@ -20,6 +30,8 @@ export default function ClientsPage() {
   const [clients, setClients] = useState<ClientListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedClient, setSelectedClient] = useState<ClientListItem | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     if (session?.user?.role === 'admin') {
@@ -75,8 +87,17 @@ export default function ClientsPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredClients.map((client, idx) => (
-            <Link key={client.id || idx} href={client.isGuest ? '#' : `/admin/clients/${client.id}`}>
-              <Card className="bg-[var(--surface-hover)] border-[var(--border)] hover:border-[var(--primary)]/50 transition-all-smooth cursor-pointer premium-shadow group">
+            <div 
+              key={client.id || idx} 
+              onClick={() => {
+                if (!client.isGuest) {
+                  setSelectedClient(client);
+                  setShowEditModal(true);
+                }
+              }}
+              className={client.isGuest ? 'cursor-not-allowed' : 'cursor-pointer'}
+            >
+              <Card className={`bg-[var(--surface-hover)] border-[var(--border)] ${!client.isGuest ? 'hover:border-[var(--primary)]/50 transition-all-smooth premium-shadow group' : 'opacity-60'}`}>
                 <CardContent className="p-6 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-[var(--primary)] to-[var(--secondary)] flex items-center justify-center text-white text-xl font-bold flex-shrink-0 shadow-lg">
                     {client.profileImage ? (
@@ -84,7 +105,7 @@ export default function ClientsPage() {
                     ) : (client.name ? client.name.charAt(0).toUpperCase() : <UserIcon />)}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-bold truncate group-hover:text-[var(--primary)] transition-colors">{client.name || 'Cliente'}</h3>
+                    <h3 className={`text-lg font-bold truncate ${!client.isGuest ? 'group-hover:text-[var(--primary)] transition-colors' : ''}`}>{client.name || 'Cliente'}</h3>
                     {client.email && <p className="text-sm opacity-70 truncate">{client.email}</p>}
                     {client.phone && <p className="text-sm opacity-70 truncate">{client.phone}</p>}
                     {client.isGuest && <span className="inline-block mt-2 text-xs px-2 py-1 bg-[var(--surface)] text-[var(--foreground)] opacity-80 rounded-full border border-[var(--border)]">Invitado (Sin App)</span>}
@@ -94,7 +115,7 @@ export default function ClientsPage() {
                   )}
                 </CardContent>
               </Card>
-            </Link>
+            </div>
           ))}
         </div>
 
@@ -105,6 +126,38 @@ export default function ClientsPage() {
           </div>
         )}
       </div>
+
+      {/* Client Edit Modal */}
+      {selectedClient && !selectedClient.isGuest && (
+        <ClientEditModal 
+          isOpen={showEditModal}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedClient(null);
+          }}
+          client={{
+            id: selectedClient.id,
+            name: selectedClient.name || '',
+            phone: selectedClient.phone || '',
+            email: selectedClient.email || '',
+            eyeSize: selectedClient.eyeSize || '',
+            eyeShape: selectedClient.eyeShape || '',
+            eyeAxis: selectedClient.eyeAxis || '',
+            eyelidType: selectedClient.eyelidType || '',
+            eyeLocation: selectedClient.eyeLocation || '',
+            eyeDepth: selectedClient.eyeDepth || '',
+            lashThickness: selectedClient.lashThickness || '',
+            lashCurvature: selectedClient.lashCurvature || '',
+            lashLength: selectedClient.lashLength || '',
+            lashColor: selectedClient.lashColor || ''
+          }}
+          onSuccess={() => {
+            fetchClients();
+            setShowEditModal(false);
+            setSelectedClient(null);
+          }}
+        />
+      )}
     </div>
   );
 }

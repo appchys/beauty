@@ -10,6 +10,16 @@ type ClientUserData = {
   phone?: string;
   profileImage?: string;
   createdAt?: { toDate?: () => Date } | Date | string;
+  eyeSize?: string;
+  eyeShape?: string;
+  eyeAxis?: string;
+  eyelidType?: string;
+  eyeLocation?: string;
+  eyeDepth?: string;
+  lashThickness?: string;
+  lashCurvature?: string;
+  lashLength?: string;
+  lashColor?: string;
 };
 
 type ClientCardData = {
@@ -64,6 +74,16 @@ export async function GET(request: Request, props: { params: Promise<{ clientId:
       phone?: string;
       profileImage?: string;
       createdAt: Date;
+      eyeSize?: string;
+      eyeShape?: string;
+      eyeAxis?: string;
+      eyelidType?: string;
+      eyeLocation?: string;
+      eyeDepth?: string;
+      lashThickness?: string;
+      lashCurvature?: string;
+      lashLength?: string;
+      lashColor?: string;
     } | null = null;
     if (clientDoc.exists) {
       const d = clientDoc.data() as ClientUserData;
@@ -89,7 +109,17 @@ export async function GET(request: Request, props: { params: Promise<{ clientId:
         email: d.email,
         phone: d.phone,
         profileImage: d.profileImage,
-        createdAt
+        createdAt,
+        eyeSize: d.eyeSize,
+        eyeShape: d.eyeShape,
+        eyeAxis: d.eyeAxis,
+        eyelidType: d.eyelidType,
+        eyeLocation: d.eyeLocation,
+        eyeDepth: d.eyeDepth,
+        lashThickness: d.lashThickness,
+        lashCurvature: d.lashCurvature,
+        lashLength: d.lashLength,
+        lashColor: d.lashColor,
       };
     }
 
@@ -153,7 +183,12 @@ export async function PATCH(request: Request, props: { params: Promise<{ clientI
     const data = await request.json();
     const adminDb = getAdminDb();
 
-    const allowedFields = ['name', 'email', 'phone', 'profileImage'];
+    const allowedFields = [
+      'name', 'email', 'phone', 'profileImage',
+      'eyeSize', 'eyeShape', 'eyeAxis', 'eyelidType', 
+      'eyeLocation', 'eyeDepth', 'lashThickness', 
+      'lashCurvature', 'lashLength', 'lashColor'
+    ];
     const updateData: Record<string, unknown> = {
       updatedAt: new Date()
     };

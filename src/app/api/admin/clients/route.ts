@@ -13,6 +13,16 @@ type ClientSummary = {
   profileImage?: string;
   createdAt: Date;
   isGuest?: boolean;
+  eyeSize?: string;
+  eyeShape?: string;
+  eyeAxis?: string;
+  eyelidType?: string;
+  eyeLocation?: string;
+  eyeDepth?: string;
+  lashThickness?: string;
+  lashCurvature?: string;
+  lashLength?: string;
+  lashColor?: string;
 };
 
 export async function GET() {
@@ -86,7 +96,17 @@ export async function GET() {
         email: data.email,
         phone: data.phone,
         profileImage: data.profileImage,
-        createdAt: data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+        createdAt: data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+        eyeSize: data.eyeSize,
+        eyeShape: data.eyeShape,
+        eyeAxis: data.eyeAxis,
+        eyelidType: data.eyelidType,
+        eyeLocation: data.eyeLocation,
+        eyeDepth: data.eyeDepth,
+        lashThickness: data.lashThickness,
+        lashCurvature: data.lashCurvature,
+        lashLength: data.lashLength,
+        lashColor: data.lashColor,
       });
       // De-duplicate if needed
       clientIds.delete(doc.id);
@@ -108,7 +128,17 @@ export async function GET() {
             email: data.email,
             phone: data.phone,
             profileImage: data.profileImage,
-            createdAt: data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt)
+            createdAt: data.createdAt.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+            eyeSize: data.eyeSize,
+            eyeShape: data.eyeShape,
+            eyeAxis: data.eyeAxis,
+            eyelidType: data.eyelidType,
+            eyeLocation: data.eyeLocation,
+            eyeDepth: data.eyeDepth,
+            lashThickness: data.lashThickness,
+            lashCurvature: data.lashCurvature,
+            lashLength: data.lashLength,
+            lashColor: data.lashColor,
           });
         });
       });
@@ -186,6 +216,16 @@ export async function POST(request: Request) {
       businessId: business.id, // VINCULAR AL NEGOCIO ACTUAL
       createdAt: now,
       updatedAt: now,
+      eyeSize: data.eyeSize || '',
+      eyeShape: data.eyeShape || '',
+      eyeAxis: data.eyeAxis || '',
+      eyelidType: data.eyelidType || '',
+      eyeLocation: data.eyeLocation || '',
+      eyeDepth: data.eyeDepth || '',
+      lashThickness: data.lashThickness || '',
+      lashCurvature: data.lashCurvature || '',
+      lashLength: data.lashLength || '',
+      lashColor: data.lashColor || '',
     };
 
     await adminDb.collection('users').doc(clientId).set(newClient);
