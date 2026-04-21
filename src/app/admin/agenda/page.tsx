@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Appointment, Service, Client } from '@/types';
-import { Calendar as CalendarIcon, List, Clock, Plus, X, User, Settings } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Clock, Plus, X, User, Settings, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import ClientEditModal from '@/components/ClientEditModal';
@@ -135,6 +135,19 @@ export default function AgendaPage() {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status })
+      });
+      fetchAppointments();
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const deleteAppointment = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta cita?')) return;
+    
+    try {
+      await fetch(`/api/admin/appointments/${id}`, {
+        method: 'DELETE'
       });
       fetchAppointments();
     } catch (e) {
@@ -282,7 +295,7 @@ export default function AgendaPage() {
             {todayAppointments.map(app => (
               <div key={app.id} className="relative">
                 <div className="absolute -left-[35px] w-4 h-4 rounded-full bg-[var(--secondary)] border-4 border-[var(--surface)]"></div>
-                <Card className="bg-[var(--surface-hover)] border-[var(--border)] shadow-sm hover:shadow-md transition-shadow">
+                <Card className="bg-[var(--surface-hover)] border-[var(--border)] shadow-sm hover:shadow-md transition-shadow relative group">
                   <CardContent className="p-4 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                     <div>
                       <h3 className="font-bold text-lg">
@@ -293,15 +306,44 @@ export default function AgendaPage() {
                       </p>
                       {app.notes && <p className="text-xs opacity-60 mt-2 italic">{app.notes}</p>}
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 items-center">
                       {app.status === 'pending' && (
                         <>
                           <button onClick={() => updateStatus(app.id, 'completed')} className="text-xs px-3 py-1.5 bg-green-500/20 text-green-600 rounded-lg hover:bg-green-500/30 font-medium">Completar</button>
                           <button onClick={() => updateStatus(app.id, 'cancelled')} className="text-xs px-3 py-1.5 bg-red-500/20 text-red-600 rounded-lg hover:bg-red-500/30 font-medium">Cancelar</button>
+                          <button
+                            onClick={() => deleteAppointment(app.id)}
+                            className="p-2 bg-red-500/20 text-red-600 rounded-lg hover:bg-red-500/30 transition-all-smooth"
+                            title="Eliminar cita"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </>
                       )}
-                      {app.status === 'completed' && <span className="text-sm text-green-500 font-medium">Completada</span>}
-                      {app.status === 'cancelled' && <span className="text-sm text-red-500 font-medium">Cancelada</span>}
+                      {app.status === 'completed' && (
+                        <>
+                          <span className="text-sm text-green-500 font-medium">Completada</span>
+                          <button
+                            onClick={() => deleteAppointment(app.id)}
+                            className="p-2 bg-red-500/20 text-red-600 rounded-lg hover:bg-red-500/30 transition-all-smooth"
+                            title="Eliminar cita"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                      {app.status === 'cancelled' && (
+                        <>
+                          <span className="text-sm text-red-500 font-medium">Cancelada</span>
+                          <button
+                            onClick={() => deleteAppointment(app.id)}
+                            className="p-2 bg-red-500/20 text-red-600 rounded-lg hover:bg-red-500/30 transition-all-smooth"
+                            title="Eliminar cita"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
