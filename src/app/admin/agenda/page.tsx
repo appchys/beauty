@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Appointment, Service, Client } from '@/types';
-import { Calendar as CalendarIcon, List, Clock, Plus, X, User, Settings, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, List, Clock, Plus, X, User, Settings, Trash2, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import ClientEditModal from '@/components/ClientEditModal';
@@ -389,6 +389,7 @@ export default function AgendaPage() {
                         <th className="py-3 px-4">Cliente</th>
                         <th className="py-3 px-4">Servicio</th>
                         <th className="py-3 px-4">Estado</th>
+                        <th className="py-3 px-4">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -406,6 +407,35 @@ export default function AgendaPage() {
                             )}>
                               {app.status === 'pending' ? 'Pendiente' : app.status === 'completed' ? 'Completado' : 'Cancelado'}
                             </span>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="flex gap-2">
+                              {app.status === 'pending' && (
+                                <>
+                                  <button 
+                                    onClick={() => updateStatus(app.id, 'completed')} 
+                                    className="p-2 bg-green-500/20 text-green-600 rounded-lg hover:bg-green-500/30 transition-all-smooth" 
+                                    title="Completar cita"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => updateStatus(app.id, 'cancelled')} 
+                                    className="p-2 bg-red-500/20 text-red-600 rounded-lg hover:bg-red-500/30 transition-all-smooth" 
+                                    title="Cancelar cita"
+                                  >
+                                    <X className="w-4 h-4" />
+                                  </button>
+                                </>
+                              )}
+                              <button
+                                onClick={() => deleteAppointment(app.id)}
+                                className="p-2 bg-red-500/20 text-red-600 rounded-lg hover:bg-red-500/30 transition-all-smooth"
+                                title="Eliminar cita"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
