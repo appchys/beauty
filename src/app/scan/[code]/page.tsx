@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, CheckCircle, AlertCircle, Clock, Trophy, Sparkles } from 'lucide-react';
@@ -82,11 +82,13 @@ interface StoredClient {
 export default function ScanPage() {
   const params = useParams();
   const router = useRouter();
+  const hasValidatedQRCode = useRef(false);
   const [qrData, setQrData] = useState<QRCode | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showRegistration, setShowRegistration] = useState(false);
   const [storedClient, setStoredClient] = useState<StoredClient | null>(null);
+  const [clientStorageLoaded, setClientStorageLoaded] = useState(false);
   const [foundClient, setFoundClient] = useState<StoredClient | null>(null);
   // step: 'phone' (ingresar celular), 'confirm' (mostrar nombre si existe), 'name' (pedir nombre si no existe)
   const [step, setStep] = useState<'phone' | 'confirm' | 'name'>('phone');
@@ -95,6 +97,7 @@ export default function ScanPage() {
     phone: ''
   });
   const [processing, setProcessing] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
   const [success, setSuccess] = useState<{
     message: string;
     clientCard?: {
@@ -109,12 +112,16 @@ export default function ScanPage() {
   // Buscar cliente por teléfono
   const lookupByPhone = async () => {
     setError(null);
-    if (!clientData.phone) {
+    const phone = clientData.phone.trim();
+
+    if (!phone) {
       setError('Ingresa tu número de celular');
       return;
     }
+    setLookupLoading(true);
+
     try {
-      const res = await fetch(`/api/client/lookup?phone=${encodeURIComponent(clientData.phone)}`);
+      const res = await fetch(`/api/client/lookup?phone=${encodeURIComponent(phone)}`);
       const data = await res.json();
       if (!res.ok) {
         setError(data.error || 'No se pudo validar el celular');
@@ -125,10 +132,13 @@ export default function ScanPage() {
         setStep('confirm');
       } else {
         setFoundClient(null);
+        setClientData(prev => ({ ...prev, phone }));
         setStep('name');
       }
     } catch {
       setError('Error al verificar el celular');
+    } finally {
+      setLookupLoading(false);
     }
   };
 
@@ -190,6 +200,7 @@ export default function ScanPage() {
         localStorage.removeItem('beautyClient');
       }
     }
+    setClientStorageLoaded(true);
   }, []);
 
   // Procesar automáticamente con cliente guardado
@@ -308,10 +319,11 @@ export default function ScanPage() {
 
   // Ahora useEffect puede usar validateQRCode sin problemas
   useEffect(() => {
-    if (params.code) {
+    if (clientStorageLoaded && params.code && !hasValidatedQRCode.current) {
+      hasValidatedQRCode.current = true;
       validateQRCode();
     }
-  }, [params.code, validateQRCode]);
+  }, [clientStorageLoaded, params.code, validateQRCode]);
 
   // Cargar metadatos de la tarjeta y negocio cuando hay éxito para mostrar diseño igual a "Mis Tarjetas"
   useEffect(() => {
@@ -339,7 +351,7 @@ export default function ScanPage() {
         setError('Nombre y celular son requeridos');
         return;
       }
-    } else if (step === 'phone') {
+    } else if (step === 'phone' && showRegistration) {
       // En paso teléfono no se debería llamar directamente a handleScan
       return;
     }
@@ -408,7 +420,7 @@ export default function ScanPage() {
     );
   }
 
-  if (error) {
+  if (error && !showRegistration) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
         <Card className="w-full max-w-md">
@@ -611,7 +623,12 @@ export default function ScanPage() {
 
               <div className="space-y-4">
                 {step === 'phone' && (
-                  <div>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      if (!lookupLoading) lookupByPhone();
+                    }}
+                  >
                     <label className="block text-sm font-medium text-gray-700 mb-1">Celular *</label>
                     <input
                       type="tel"
@@ -622,12 +639,13 @@ export default function ScanPage() {
                       required
                     />
                     <button
-                      onClick={lookupByPhone}
-                      className="mt-3 w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
+                      type="submit"
+                      disabled={lookupLoading || !clientData.phone.trim()}
+                      className="mt-3 w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
-                      Continuar
+                      {lookupLoading ? 'Verificando...' : 'Continuar'}
                     </button>
-                  </div>
+                  </form>
                 )}
 
                 {step === 'confirm' && foundClient && (
@@ -680,6 +698,12 @@ export default function ScanPage() {
                   </>
                 )}
               </div>
+
+              {error && (
+                <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700">
+                  {error}
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center">
@@ -699,10 +723,10 @@ export default function ScanPage() {
           )}
 
           {/* Solo mostrar el botón si no hay cliente guardado o si necesita registro */}
-          {(!storedClient || showRegistration) && step !== 'name' && (
+          {!storedClient && !showRegistration && (
             <button
               onClick={handleScan}
-              disabled
+              disabled={processing}
               className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
             >
               {processing ? (

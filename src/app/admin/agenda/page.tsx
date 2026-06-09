@@ -453,34 +453,12 @@ export default function AgendaPage() {
   if (loading) return <div className="animate-pulse flex space-x-4"><div className="flex-1 space-y-4 py-1"><div className="h-4 bg-[var(--border)] rounded w-3/4"></div></div></div>;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Agenda de citas</h1>
           <p className="opacity-70 mt-1">Organiza tu agenda y próximos eventos.</p>
         </div>
-        
-        <div className="flex space-x-2 bg-[var(--surface-hover)] p-1 rounded-xl border border-[var(--border)]">
-          <button 
-            onClick={() => setViewMode('timeline')}
-            className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'timeline' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
-          >
-            <Clock className="w-4 h-4" /> Agenda
-          </button>
-          <button 
-            onClick={() => setViewMode('calendar')}
-            className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'calendar' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
-          >
-            <CalendarIcon className="w-4 h-4" /> Calendario
-          </button>
-          <button 
-            onClick={() => setViewMode('list')}
-            className={cn("px-4 py-2 rounded-lg flex items-center gap-2 text-sm transition-all-smooth font-medium", viewMode === 'list' ? "bg-[var(--surface)] premium-shadow text-[var(--primary)]" : "opacity-70 hover:opacity-100")}
-          >
-            <List className="w-4 h-4" /> Historial
-          </button>
-        </div>
-
       </div>
 
       <div className="animate-fade-in-up">
@@ -492,11 +470,37 @@ export default function AgendaPage() {
       {/* Floating Action Button */}
       <button 
         onClick={() => setShowModal(true)}
-        className="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all-smooth hover:scale-110 active:scale-95 z-40 group"
+        className="fixed bottom-28 right-6 md:right-8 w-14 h-14 bg-gradient-to-r from-[var(--primary)] to-[var(--secondary)] text-white rounded-full flex items-center justify-center shadow-xl hover:shadow-2xl transition-all-smooth hover:scale-110 active:scale-95 z-40 group"
         title="Nueva Cita"
       >
         <Plus className="w-8 h-8 group-hover:rotate-90 transition-transform duration-300" />
       </button>
+
+      <nav className="fixed bottom-0 left-0 right-0 md:left-72 z-40 border-t border-[var(--border)] bg-[var(--surface)]/95 backdrop-blur-xl shadow-[0_-12px_30px_rgba(0,0,0,0.08)]">
+        <div className="grid grid-cols-3 gap-1 p-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] max-w-3xl mx-auto">
+          <button
+            onClick={() => setViewMode('timeline')}
+            className={cn("h-14 rounded-xl flex flex-col items-center justify-center gap-1 text-xs transition-all-smooth font-medium", viewMode === 'timeline' ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "opacity-70 hover:opacity-100 hover:bg-[var(--surface-hover)]")}
+          >
+            <Clock className="w-5 h-5" />
+            <span>Agenda</span>
+          </button>
+          <button
+            onClick={() => setViewMode('calendar')}
+            className={cn("h-14 rounded-xl flex flex-col items-center justify-center gap-1 text-xs transition-all-smooth font-medium", viewMode === 'calendar' ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "opacity-70 hover:opacity-100 hover:bg-[var(--surface-hover)]")}
+          >
+            <CalendarIcon className="w-5 h-5" />
+            <span>Calendario</span>
+          </button>
+          <button
+            onClick={() => setViewMode('list')}
+            className={cn("h-14 rounded-xl flex flex-col items-center justify-center gap-1 text-xs transition-all-smooth font-medium", viewMode === 'list' ? "bg-[var(--primary)]/10 text-[var(--primary)]" : "opacity-70 hover:opacity-100 hover:bg-[var(--surface-hover)]")}
+          >
+            <List className="w-5 h-5" />
+            <span>Historial</span>
+          </button>
+        </div>
+      </nav>
 
       {showModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
