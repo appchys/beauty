@@ -1,7 +1,14 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { createUser, getUserByEmail, getUserByPhone } from '@/lib/firestore';
+import { 
+  createUser, 
+  getUserByEmail, 
+  getUserByPhone, 
+  getUserById, 
+  getBusinessByDirectAccessToken, 
+  updateBusinessAdminId 
+} from '@/lib/firestore';
 
 // Helper function para detectar si el input es email o teléfono
 function isEmail(input: string): boolean {
@@ -25,6 +32,7 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email o Celular', type: 'text' },
         password: { label: 'Password', type: 'password' },
+        token: { label: 'Token', type: 'text' },
         name: { label: 'Name', type: 'text' },
         phone: { label: 'Phone', type: 'text' },
         slug: { label: 'Slug', type: 'text' },
@@ -32,11 +40,48 @@ export const authOptions: NextAuthOptions = {
         action: { label: 'Action', type: 'text' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
         try {
+          if (credentials?.action === 'direct-login') {
+            if (!credentials?.token) {
+              console.log('Direct login: sin token');
+              return null;
+            }
+
+            const business = await getBusinessByDirectAccessToken(credentials.token);
+            if (!business) {
+              console.log('Direct login: negocio no encontrado con token');
+              return null;
+            }
+
+            let adminUser = business.adminId ? await getUserById(business.adminId) : null;
+            if (!adminUser && business.email) {
+              adminUser = await getUserByEmail(business.email);
+            }
+
+            if (!adminUser) {
+              adminUser = await createUser({
+                name: `Admin - ${business.name}`,
+                email: business.email || `admin_${business.id.slice(0, 8)}@beautypoints.app`,
+                role: 'admin',
+                businessId: business.id,
+              });
+              await updateBusinessAdminId(business.id, adminUser.id);
+            }
+
+            console.log('Direct login exitoso para:', business.name, 'Admin:', adminUser.name);
+
+            return {
+              id: adminUser.id,
+              email: adminUser.email || business.email || 'admin@negocio.com',
+              name: adminUser.name,
+              role: 'admin',
+            };
+          }
+
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
           if (credentials.action === 'signup') {
             // REGISTRO: Crear nuevo usuario
             if (!credentials.name || !credentials.role) {

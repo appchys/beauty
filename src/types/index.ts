@@ -32,6 +32,7 @@ export interface Business {
   phone?: string;
   email?: string;
   adminId: string;
+  directAccessToken?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -191,4 +192,57 @@ export interface Expense {
   appointmentId?: string; // Si viene de una cita
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface CourseResource {
+  name: string;
+  url: string;
+}
+
+export interface CourseLesson {
+  id: string;
+  title: string;
+  videoUrl: string; // Enlace a YouTube, Vimeo o MP4
+  duration?: string; // ej: "15 min"
+  description?: string;
+  isFreePreview?: boolean;
+  resources?: CourseResource[];
+}
+
+export interface CourseModule {
+  id: string;
+  title: string;
+  description?: string;
+  lessons: CourseLesson[];
+}
+
+export interface Course {
+  id: string;
+  businessId: string;
+  title: string;
+  description: string;
+  coverImage?: string;
+  price: number;
+  duration?: string; // ej: "4 semanas" o "6 horas"
+  level?: 'principiante' | 'intermedio' | 'avanzado' | 'todos';
+  category?: string;
+  isPublished: boolean;
+  modules: CourseModule[];
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CourseEnrollment {
+  id: string;
+  courseId: string;
+  businessId: string;
+  clientId: string;
+  clientName: string;
+  clientEmail: string;
+  clientPhone?: string;
+  pricePaid: number;
+  status: 'active' | 'pending' | 'completed';
+  paymentMethod: 'card' | 'transfer' | 'cash' | 'free';
+  enrolledAt: Date;
+  completedLessons: string[]; // Lista de IDs de lecciones completadas
 }

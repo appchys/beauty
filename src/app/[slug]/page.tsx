@@ -12,9 +12,25 @@ import {
   Clock, 
   Star,
   ChevronRight,
-  Info
+  Info,
+  GraduationCap,
+  Video,
+  Layers
 } from 'lucide-react';
 import Link from 'next/link';
+
+interface PublicCourseItem {
+  id: string;
+  title: string;
+  description: string;
+  coverImage?: string;
+  price: number;
+  duration?: string;
+  level?: string;
+  category?: string;
+  modulesCount: number;
+  lessonsCount: number;
+}
 
 export default function PublicProfilePage() {
   const params = useParams();
@@ -23,6 +39,8 @@ export default function PublicProfilePage() {
   const [loading, setLoading] = useState(true);
   const [business, setBusiness] = useState<Business | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [courses, setCourses] = useState<PublicCourseItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'services' | 'courses'>('services');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -43,6 +61,7 @@ export default function PublicProfilePage() {
         const data = await response.json();
         setBusiness(data.business);
         setServices(data.services);
+        setCourses(data.courses || []);
       } catch (err) {
         console.error('Error fetching public profile:', err);
         setError('Error de conexión');
@@ -138,57 +157,195 @@ export default function PublicProfilePage() {
         </div>
       </div>
 
-      {/* Services List */}
+      {/* Tabs Selector: Servicios / Cursos */}
       <div className="max-w-4xl mx-auto px-4 mt-8">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-            <Scissors className="text-purple-600" />
-            Nuestros Servicios
-          </h2>
-          <div className="h-0.5 flex-1 bg-gray-200 ml-4"></div>
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex p-1.5 bg-gray-200/70 rounded-2xl gap-1">
+            <button
+              onClick={() => setActiveTab('services')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                activeTab === 'services'
+                  ? 'bg-white text-gray-900 shadow-md'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Scissors size={16} className={activeTab === 'services' ? 'text-purple-600' : ''} />
+              <span>Servicios ({services.length})</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('courses')}
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm transition-all cursor-pointer ${
+                activeTab === 'courses'
+                  ? 'bg-white text-gray-900 shadow-md'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <GraduationCap size={18} className={activeTab === 'courses' ? 'text-pink-600' : ''} />
+              <span>Cursos Online ({courses.length})</span>
+              {courses.length > 0 && (
+                <span className="w-2 h-2 rounded-full bg-pink-500 animate-pulse"></span>
+              )}
+            </button>
+          </div>
         </div>
 
-        {services && services.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {services.map((service) => (
-              <div 
-                key={service.id} 
-                className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group flex gap-4"
-              >
-                <div className="w-20 h-20 rounded-xl bg-gray-50 flex-shrink-0 overflow-hidden relative border border-gray-100">
-                  {service.photo ? (
-                    <Image src={service.photo} alt={service.name} fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">
-                      <Scissors size={24} />
+        {/* Tab 1: Servicios */}
+        {activeTab === 'services' && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <Scissors className="text-purple-600" />
+                Nuestros Servicios Presenciales
+              </h2>
+              <div className="h-0.5 flex-1 bg-gray-200 ml-4"></div>
+            </div>
+
+            {services && services.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {services.map((service) => (
+                  <div 
+                    key={service.id} 
+                    className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group flex gap-4"
+                  >
+                    <div className="w-20 h-20 rounded-xl bg-gray-50 flex-shrink-0 overflow-hidden relative border border-gray-100">
+                      {service.photo ? (
+                        <Image src={service.photo} alt={service.name} fill className="object-cover" />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                          <Scissors size={24} />
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">{service.name}</h3>
-                  <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
-                    <span className="flex items-center gap-1">
-                      <Clock size={14} />
-                      {service.duration} min
-                    </span>
-                    <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md font-bold">
-                      ${service.price}
-                    </span>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-gray-900 text-lg mb-1 truncate">{service.name}</h3>
+                      <div className="flex items-center gap-3 text-sm text-gray-500 mb-2">
+                        <span className="flex items-center gap-1">
+                          <Clock size={14} />
+                          {service.duration} min
+                        </span>
+                        <span className="px-2 py-0.5 bg-purple-50 text-purple-600 rounded-md font-bold">
+                          ${service.price}
+                        </span>
+                      </div>
+                      {service.description && (
+                        <p className="text-xs text-gray-500 line-clamp-2">{service.description}</p>
+                      )}
+                    </div>
+                    <div className="flex items-center">
+                      <ChevronRight size={20} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
+                    </div>
                   </div>
-                  {service.description && (
-                    <p className="text-xs text-gray-500 line-clamp-2">{service.description}</p>
-                  )}
-                </div>
-                <div className="flex items-center">
-                  <ChevronRight size={20} className="text-gray-300 group-hover:text-purple-500 transition-colors" />
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200">
+                <Info size={40} className="mx-auto text-gray-300 mb-3" />
+                <p className="text-gray-500 font-medium">No hay servicios disponibles por el momento.</p>
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-12 bg-white rounded-2xl border-2 border-dashed border-gray-200">
-            <Info size={40} className="mx-auto text-gray-300 mb-3" />
-            <p className="text-gray-500 font-medium">No hay servicios disponibles por el momento.</p>
+        )}
+
+        {/* Tab 2: Cursos Online */}
+        {activeTab === 'courses' && (
+          <div>
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <GraduationCap className="text-pink-600" />
+                Cursos y Masterclasses Online
+              </h2>
+              <div className="h-0.5 flex-1 bg-gray-200 ml-4"></div>
+            </div>
+
+            {courses && courses.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {courses.map((course) => (
+                  <div 
+                    key={course.id}
+                    className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col overflow-hidden group"
+                  >
+                    {/* Portada */}
+                    <div className="relative h-48 w-full bg-gradient-to-tr from-pink-600 to-purple-600 overflow-hidden">
+                      {course.coverImage ? (
+                        <Image 
+                          src={course.coverImage} 
+                          alt={course.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-300"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white/90 p-4">
+                          <Video className="h-10 w-10 mb-2 opacity-80" />
+                          <span className="text-xs uppercase tracking-wider font-semibold opacity-90">{course.category || 'Curso Online'}</span>
+                        </div>
+                      )}
+
+                      <div className="absolute top-3 right-3">
+                        <span className="px-3.5 py-1 bg-white/95 text-gray-900 font-extrabold text-base rounded-full shadow-lg backdrop-blur-md">
+                          {course.price > 0 ? `$${course.price.toFixed(2)}` : 'Gratis'}
+                        </span>
+                      </div>
+
+                      {course.level && (
+                        <div className="absolute bottom-3 left-3">
+                          <span className="px-3 py-1 bg-black/60 text-white font-medium text-xs rounded-full backdrop-blur-md capitalize">
+                            Nivel {course.level}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Contenido */}
+                    <div className="p-6 flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-extrabold text-gray-900 text-xl mb-2 group-hover:text-pink-600 transition-colors line-clamp-1">
+                          {course.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 line-clamp-2 mb-4">
+                          {course.description || 'Aprende las mejores técnicas con nuestro curso digital en video.'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <div className="flex items-center gap-4 text-xs text-gray-500 py-3 border-t border-gray-100 mb-4">
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Layers className="h-4 w-4 text-pink-500" />
+                            {course.modulesCount || 0} módulos
+                          </span>
+                          <span className="flex items-center gap-1.5 font-medium">
+                            <Video className="h-4 w-4 text-purple-500" />
+                            {course.lessonsCount || 0} clases en video
+                          </span>
+                          {course.duration && (
+                            <span className="flex items-center gap-1.5 font-medium">
+                              <Clock className="h-4 w-4 text-blue-500" />
+                              {course.duration}
+                            </span>
+                          )}
+                        </div>
+
+                        <Link
+                          href={`/${slug}/courses/${course.id}`}
+                          className="w-full inline-flex items-center justify-center gap-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-2xl shadow-md shadow-pink-200 transition-all hover:scale-[1.02]"
+                        >
+                          <span>Ver Temario e Inscribirme</span>
+                          <ChevronRight size={18} />
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200 p-8">
+                <GraduationCap size={44} className="mx-auto text-gray-300 mb-3" />
+                <h3 className="text-lg font-bold text-gray-800 mb-1">Próximamente nuevos cursos</h3>
+                <p className="text-gray-500 text-sm max-w-sm mx-auto">
+                  Este negocio aún no tiene cursos online publicados. ¡Vuelve a revisar pronto!
+                </p>
+              </div>
+            )}
           </div>
         )}
       </div>

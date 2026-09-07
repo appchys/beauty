@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Building2, QrCode, TrendingUp, Calendar, MapPin, Phone, Mail, Lock, Edit, Trash2, Eye, Star, X } from 'lucide-react';
+import { Users, Building2, QrCode, TrendingUp, Calendar, MapPin, Phone, Mail, Lock, Edit, Trash2, Eye, Star, X, Link2, KeyRound, Copy, Check, ExternalLink, RefreshCw } from 'lucide-react';
 import { SuperAdminStats, Business, User, LoyaltyCard, ClientWithCardInfo } from '@/types';
 
 export default function SuperAdminDashboard() {
@@ -29,6 +29,14 @@ export default function SuperAdminDashboard() {
     phone: '',
     email: ''
   });
+
+  // Estados para Enlace Directo
+  const [showDirectLinkModal, setShowDirectLinkModal] = useState(false);
+  const [directLinkBusiness, setDirectLinkBusiness] = useState<Business | null>(null);
+  const [directLinkUrl, setDirectLinkUrl] = useState('');
+  const [directLinkLoading, setDirectLinkLoading] = useState(false);
+  const [copiedBusinessId, setCopiedBusinessId] = useState<string | null>(null);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   useEffect(() => {
     // Verificar si ya está autenticado en localStorage
@@ -92,6 +100,83 @@ export default function SuperAdminDashboard() {
       email: business.email || ''
     });
     setShowBusinessModal(true);
+  };
+
+  const handleOpenDirectLink = async (business: Business) => {
+    setDirectLinkBusiness(business);
+    setShowDirectLinkModal(true);
+    setDirectLinkLoading(true);
+    setDirectLinkUrl('');
+
+    try {
+      const response = await fetch(`/api/super-admin/businesses/${business.id}/direct-link`);
+      if (response.ok) {
+        const data = await response.json();
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const fullUrl = data.directUrl || `${origin}${data.path}`;
+        setDirectLinkUrl(fullUrl);
+      } else {
+        alert('Error al obtener el enlace de ingreso directo');
+      }
+    } catch (err) {
+      console.error('Error fetching direct link:', err);
+      alert('Error al obtener el enlace directo');
+    } finally {
+      setDirectLinkLoading(false);
+    }
+  };
+
+  const handleQuickCopyDirectLink = async (business: Business, e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+
+    try {
+      const response = await fetch(`/api/super-admin/businesses/${business.id}/direct-link`);
+      if (response.ok) {
+        const data = await response.json();
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const fullUrl = data.directUrl || `${origin}${data.path}`;
+        await navigator.clipboard.writeText(fullUrl);
+        setCopiedBusinessId(business.id);
+        setTimeout(() => {
+          setCopiedBusinessId(null);
+        }, 3000);
+      } else {
+        alert('Error al generar enlace directo');
+      }
+    } catch (err) {
+      console.error('Error copying direct link:', err);
+    }
+  };
+
+  const handleRegenerateDirectLink = async () => {
+    if (!directLinkBusiness) return;
+    if (!confirm('¿Regenerar el enlace de ingreso directo? El enlace anterior dejará de funcionar inmediatamente para mayor seguridad.')) {
+      return;
+    }
+
+    try {
+      setIsRegenerating(true);
+      const response = await fetch(`/api/super-admin/businesses/${directLinkBusiness.id}/direct-link`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ regenerate: true }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const origin = typeof window !== 'undefined' ? window.location.origin : '';
+        const fullUrl = data.directUrl || `${origin}${data.path}`;
+        setDirectLinkUrl(fullUrl);
+        alert('Enlace regenerado exitosamente. Se ha actualizado el acceso.');
+      } else {
+        alert('Error al regenerar el enlace directo');
+      }
+    } catch (err) {
+      console.error('Error regenerating link:', err);
+      alert('Error al regenerar el enlace');
+    } finally {
+      setIsRegenerating(false);
+    }
   };
 
   const saveBusinessChanges = async () => {
@@ -425,7 +510,35 @@ export default function SuperAdminDashboard() {
                               <p className="text-gray-600 text-sm mt-1 line-clamp-2">{business.description}</p>
                             )}
                           </div>
-                          <div className="flex space-x-2 ml-2">
+                          <div className="flex items-center space-x-1 sm:space-x-2 ml-2">
+                            <button
+                              onClick={(e) => handleQuickCopyDirectLink(business, e)}
+                              className={`p-2 rounded-md transition-all flex items-center gap-1 text-xs font-medium ${
+                                copiedBusinessId === business.id
+                                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
+                                  : 'text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200'
+                              }`}
+                              title="Copiar enlace de ingreso directo"
+                            >
+                              {copiedBusinessId === business.id ? (
+                                <>
+                                  <Check className="h-4 w-4" />
+                                  <span className="hidden sm:inline">¡Copiado!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <KeyRound className="h-4 w-4 text-purple-600" />
+                                  <span className="hidden sm:inline">Copiar Enlace</span>
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleOpenDirectLink(business)}
+                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"
+                              title="Ver detalles del enlace directo"
+                            >
+                              <Link2 className="h-4 w-4" />
+                            </button>
                             <button
                               onClick={() => viewBusinessCards(business)}
                               className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
@@ -790,6 +903,111 @@ export default function SuperAdminDashboard() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal para Enlace de Ingreso Directo */}
+      {showDirectLinkModal && directLinkBusiness && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-lg w-full overflow-hidden shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+            <div className="p-4 sm:p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-pink-50">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20">
+                  <KeyRound className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-gray-900">Enlace de Ingreso Directo</h2>
+                  <p className="text-xs text-gray-500 font-medium">{directLinkBusiness.name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowDirectLinkModal(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-4 sm:p-6 space-y-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-lg p-3.5 text-xs sm:text-sm text-amber-800 leading-relaxed">
+                <p className="font-semibold mb-1 flex items-center gap-1.5">
+                  <span>🔑</span> Acceso automático sin credenciales
+                </p>
+                Cualquier persona que abra este enlace iniciará sesión automáticamente en el panel de administración de <strong>{directLinkBusiness.name}</strong> sin usuario ni contraseña.
+              </div>
+
+              {directLinkLoading ? (
+                <div className="py-8 text-center space-y-2">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                  <p className="text-xs text-gray-500">Cargando enlace de acceso directo...</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                    Enlace de ingreso generado
+                  </label>
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={directLinkUrl}
+                      className="flex-1 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-xs sm:text-sm text-gray-700 font-mono select-all focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                    <button
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(directLinkUrl);
+                        setCopiedBusinessId(directLinkBusiness.id);
+                        setTimeout(() => setCopiedBusinessId(null), 3000);
+                      }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-lg text-xs sm:text-sm font-medium flex items-center space-x-1.5 transition-colors shadow-sm whitespace-nowrap"
+                    >
+                      {copiedBusinessId === directLinkBusiness.id ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          <span>¡Copiado!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copiar</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <div className="pt-2 flex flex-col sm:flex-row gap-2">
+                    <a
+                      href={directLinkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs sm:text-sm font-medium py-2 px-3 rounded-lg transition-colors text-center"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      <span>Abrir panel en nueva pestaña</span>
+                    </a>
+
+                    <button
+                      onClick={handleRegenerateDirectLink}
+                      disabled={isRegenerating}
+                      className="inline-flex items-center justify-center gap-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs sm:text-sm font-medium py-2 px-3 rounded-lg transition-colors border border-rose-200 disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 ${isRegenerating ? 'animate-spin' : ''}`} />
+                      <span>Regenerar Enlace</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => setShowDirectLinkModal(false)}
+                className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-100 text-xs sm:text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

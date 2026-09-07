@@ -4,12 +4,39 @@ import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import { Appointment, ClientProgress } from '@/types';
 import { Card, CardContent } from '@/components/ui/card';
-import { Star, Trophy, Clock, CheckCircle, Sparkles, User, X, Camera, Calendar } from 'lucide-react';
+import { Star, Trophy, Clock, CheckCircle, Sparkles, User, X, Camera, Calendar, GraduationCap, PlayCircle } from 'lucide-react';
+import Link from 'next/link';
+
+interface EnrolledCourseItem {
+  enrollmentId: string;
+  status: string;
+  enrolledAt: Date;
+  progressPercentage: number;
+  completedLessonsCount: number;
+  totalLessonsCount: number;
+  course: {
+    id: string;
+    title: string;
+    description: string;
+    coverImage?: string;
+    duration?: string;
+    level?: string;
+    category?: string;
+  } | null;
+  business: {
+    id: string;
+    name: string;
+    slug?: string;
+    logoUrl?: string;
+  } | null;
+}
 
 export default function ClientDashboard() {
   const { data: session, status } = useSession();
   const [progress, setProgress] = useState<ClientProgress[]>([]);
   const [loading, setLoading] = useState(true);
+  const [enrolledCourses, setEnrolledCourses] = useState<EnrolledCourseItem[]>([]);
+  const [clientTab, setClientTab] = useState<'cards' | 'courses'>('cards');
   const [localClient, setLocalClient] = useState<{ id: string; name: string; phone: string; email?: string; profileImage?: string } | null>(null);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [editForm, setEditForm] = useState({ name: '', phone: '', email: '', profileImage: '' });
@@ -65,9 +92,10 @@ export default function ClientDashboard() {
 
   const fetchProgress = async () => {
     try {
-      const [resProgress, resAppointments] = await Promise.all([
+      const [resProgress, resAppointments, resCourses] = await Promise.all([
         fetch('/api/client/progress'),
-        fetch('/api/client/appointments')
+        fetch('/api/client/appointments'),
+        fetch('/api/client/courses')
       ]);
       
       if (resProgress.ok) {
@@ -78,6 +106,11 @@ export default function ClientDashboard() {
       if (resAppointments.ok) {
         const data = await resAppointments.json();
         setAppointments(data.appointments || []);
+      }
+
+      if (resCourses.ok) {
+        const coursesData = await resCourses.json();
+        setEnrolledCourses(coursesData.courses || []);
       }
     } catch (error) {
       console.error('Error fetching progress:', error);
@@ -414,9 +447,37 @@ export default function ClientDashboard() {
           </div>
         )}
 
-        {/* Progress Cards */}
-        <div className="space-y-6">
-          <h2 className="text-2xl font-bold text-gray-900">Mis Tarjetas de Fidelidad</h2>
+        {/* Selector de Pestañas: Tarjetas / Cursos */}
+        <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-4">
+          <button
+            onClick={() => setClientTab('cards')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              clientTab === 'cards'
+                ? 'bg-pink-600 text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <Star className="h-4 w-4" />
+            <span>Tarjetas de Fidelidad ({progress.length})</span>
+          </button>
+
+          <button
+            onClick={() => setClientTab('courses')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+              clientTab === 'courses'
+                ? 'bg-pink-600 text-white shadow-md'
+                : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+            }`}
+          >
+            <GraduationCap className="h-4 w-4" />
+            <span>Mis Cursos Online ({enrolledCourses.length})</span>
+          </button>
+        </div>
+
+        {/* Tab 1: Tarjetas de Fidelidad */}
+        {clientTab === 'cards' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Mis Tarjetas de Fidelidad</h2>
           
           {progress.length === 0 ? (
             <Card>
@@ -528,6 +589,90 @@ export default function ClientDashboard() {
             </div>
           )}
         </div>
+        )}
+
+        {/* Tab 2: Mis Cursos Online */}
+        {clientTab === 'courses' && (
+          <div className="space-y-6">
+            <h2 className="text-2xl font-bold text-gray-900">Mis Cursos Online</h2>
+            {enrolledCourses.length === 0 ? (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <GraduationCap className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">Aún no estás inscrito en cursos</h3>
+                  <p className="text-gray-600 mb-4 max-w-sm mx-auto">
+                    Explora el perfil de tu centro de belleza o academia para descubrir y comprar sus cursos y masterclasses en video.
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {enrolledCourses.map((item) => (
+                  <div 
+                    key={item.enrollmentId} 
+                    className="bg-white rounded-3xl border border-gray-100 shadow-sm hover:shadow-md transition-all flex flex-col overflow-hidden"
+                  >
+                    <div className="relative h-44 w-full bg-gradient-to-tr from-pink-600 to-purple-600 overflow-hidden">
+                      {item.course?.coverImage ? (
+                        <img 
+                          src={item.course.coverImage} 
+                          alt={item.course?.title} 
+                          className="w-full h-full object-cover" 
+                        />
+                      ) : (
+                        <div className="w-full h-full flex flex-col items-center justify-center text-white">
+                          <GraduationCap className="h-12 w-12 mb-1" />
+                          <span className="text-[11px] font-bold uppercase tracking-wider">Academia Online</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                      <div>
+                        <span className="text-[11px] font-bold text-pink-600 uppercase tracking-wider">
+                          {item.business?.name || 'Academia'}
+                        </span>
+                        <h3 className="font-extrabold text-gray-900 text-lg mt-1 line-clamp-1">
+                          {item.course?.title || 'Curso'}
+                        </h3>
+                        {item.course?.description && (
+                          <p className="text-xs text-gray-500 line-clamp-2 mt-1">
+                            {item.course.description}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-3 pt-3 border-t border-gray-100">
+                        <div>
+                          <div className="flex justify-between text-xs text-gray-500 mb-1">
+                            <span>Progreso del curso</span>
+                            <span className="font-bold text-pink-600">{item.progressPercentage}%</span>
+                          </div>
+                          <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                            <div 
+                              className="bg-gradient-to-r from-pink-500 to-purple-500 h-2 rounded-full transition-all duration-300" 
+                              style={{ width: `${item.progressPercentage}%` }} 
+                            />
+                          </div>
+                          <p className="text-[11px] text-gray-400 mt-1">
+                            {item.completedLessonsCount} de {item.totalLessonsCount} lecciones completadas
+                          </p>
+                        </div>
+
+                        <Link
+                          href={`/courses/${item.course?.id}/learn`}
+                          className="w-full inline-flex items-center justify-center gap-2 bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 px-4 rounded-xl text-xs transition-colors shadow-xs"
+                        >
+                          <PlayCircle className="h-4 w-4" />
+                          <span>{item.progressPercentage > 0 ? 'Continuar Aprendiendo' : 'Empezar Curso'}</span>
+                        </Link>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal de edición de perfil */}

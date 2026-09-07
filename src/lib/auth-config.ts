@@ -1,7 +1,7 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { getUserByEmail, createUser, createBusiness } from './firestore';
+import { getUserByEmail, createUser, createBusiness, getUserById, getBusinessByDirectAccessToken, updateBusinessAdminId } from './firestore';
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -10,17 +10,51 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
+        token: { label: 'Token', type: 'text' },
         name: { label: 'Name', type: 'text' },
         phone: { label: 'Phone', type: 'text' },
         role: { label: 'Role', type: 'text' },
         action: { label: 'Action', type: 'text' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
-
         try {
+          if (credentials?.action === 'direct-login') {
+            if (!credentials?.token) {
+              return null;
+            }
+
+            const business = await getBusinessByDirectAccessToken(credentials.token);
+            if (!business) {
+              return null;
+            }
+
+            let adminUser = business.adminId ? await getUserById(business.adminId) : null;
+            if (!adminUser && business.email) {
+              adminUser = await getUserByEmail(business.email);
+            }
+
+            if (!adminUser) {
+              adminUser = await createUser({
+                name: `Admin - ${business.name}`,
+                email: business.email || `admin_${business.id.slice(0, 8)}@beautypoints.app`,
+                role: 'admin',
+                businessId: business.id,
+              });
+              await updateBusinessAdminId(business.id, adminUser.id);
+            }
+
+            return {
+              id: adminUser.id,
+              email: adminUser.email || business.email || 'admin@negocio.com',
+              name: adminUser.name,
+              role: 'admin',
+            };
+          }
+
+          if (!credentials?.email || !credentials?.password) {
+            return null;
+          }
+
           if (credentials.action === 'signup') {
             // Registro de nuevo usuario
             console.log('auth-config - credentials recibidas:', credentials);

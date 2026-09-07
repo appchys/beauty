@@ -37,5 +37,18 @@ service cloud.firestore {
     match /expenses/{expenseId} {
       allow read, write: if true;
     }
+
+    match /courses/{courseId} {
+      allow read, write: if true;
+    }
+
+    match /course_enrollments/{enrollmentId} {
+      allow read, write: if true;
+    }
+
+    // Regla general para cualquier otra colección en desarrollo
+    match /{document=**} {
+      allow read, write: if true;
+    }
   }
 }

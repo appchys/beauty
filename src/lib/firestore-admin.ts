@@ -10,7 +10,9 @@ import {
   ClientProgress,
   Appointment,
   Service,
-  Expense
+  Expense,
+  Course,
+  CourseEnrollment
 } from '@/types';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -74,6 +76,18 @@ export async function getBusinessByAdminId(adminId: string): Promise<Business | 
   
   return snapshot.docs[0].data() as Business;
 }
+
+export async function getBusinessById(businessId: string): Promise<Business | null> {
+  const adminDb = getAdminDb();
+  const doc = await adminDb.collection('businesses').doc(businessId).get();
+
+  if (!doc.exists) {
+    return null;
+  }
+
+  return doc.data() as Business;
+}
+
 
 // Loyalty Card functions
 export async function createLoyaltyCard(cardData: Omit<LoyaltyCard, 'id' | 'createdAt' | 'updatedAt'>): Promise<LoyaltyCard> {
@@ -463,3 +477,168 @@ export async function deleteExpense(expenseId: string): Promise<void> {
   const adminDb = getAdminDb();
   await adminDb.collection('expenses').doc(expenseId).delete();
 }
+
+// Course functions
+export async function createCourse(courseData: Omit<Course, 'id' | 'createdAt' | 'updatedAt'>): Promise<Course> {
+  const course: Course = {
+    ...courseData,
+    id: uuidv4(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  const adminDb = getAdminDb();
+  await adminDb.collection('courses').doc(course.id).set(course);
+  return course;
+}
+
+function parseDate(val: unknown): Date {
+  if (val && typeof (val as { toDate?: () => Date }).toDate === 'function') {
+    return (val as { toDate: () => Date }).toDate();
+  }
+  if (typeof val === 'string' || typeof val === 'number') {
+    return new Date(val);
+  }
+  return new Date();
+}
+
+export async function getCoursesByBusinessId(businessId: string): Promise<Course[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('courses')
+    .where('businessId', '==', businessId)
+    .get();
+
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as Record<string, unknown>;
+    return {
+      ...data,
+      id: doc.id,
+      createdAt: parseDate(data.createdAt),
+      updatedAt: parseDate(data.updatedAt),
+      modules: Array.isArray(data.modules) ? data.modules : []
+    } as Course;
+  }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+export async function getCourseById(courseId: string): Promise<Course | null> {
+  const adminDb = getAdminDb();
+  const doc = await adminDb.collection('courses').doc(courseId).get();
+
+  if (!doc.exists) {
+    return null;
+  }
+
+  const data = doc.data() as Record<string, unknown>;
+  return {
+    ...data,
+    id: doc.id,
+    createdAt: parseDate(data.createdAt),
+    updatedAt: parseDate(data.updatedAt),
+    modules: Array.isArray(data.modules) ? data.modules : []
+  } as Course;
+}
+
+export async function updateCourse(courseId: string, updateData: Partial<Omit<Course, 'id' | 'businessId' | 'createdAt'>>): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('courses').doc(courseId).update({
+    ...updateData,
+    updatedAt: new Date()
+  });
+}
+
+export async function deleteCourse(courseId: string): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('courses').doc(courseId).delete();
+}
+
+// Course Enrollment functions
+export async function createEnrollment(enrollmentData: Omit<CourseEnrollment, 'id' | 'enrolledAt' | 'completedLessons'>): Promise<CourseEnrollment> {
+  const enrollment: CourseEnrollment = {
+    ...enrollmentData,
+    id: uuidv4(),
+    enrolledAt: new Date(),
+    completedLessons: []
+  };
+
+  const adminDb = getAdminDb();
+  await adminDb.collection('course_enrollments').doc(enrollment.id).set(enrollment);
+  return enrollment;
+}
+
+export async function getEnrollmentsByCourseId(courseId: string): Promise<CourseEnrollment[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('course_enrollments')
+    .where('courseId', '==', courseId)
+    .get();
+
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as Record<string, unknown>;
+    return {
+      ...data,
+      id: doc.id,
+      enrolledAt: parseDate(data.enrolledAt),
+      completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons : []
+    } as CourseEnrollment;
+  }).sort((a, b) => new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime());
+}
+
+export async function getEnrollmentsByBusinessId(businessId: string): Promise<CourseEnrollment[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('course_enrollments')
+    .where('businessId', '==', businessId)
+    .get();
+
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as Record<string, unknown>;
+    return {
+      ...data,
+      id: doc.id,
+      enrolledAt: parseDate(data.enrolledAt),
+      completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons : []
+    } as CourseEnrollment;
+  });
+}
+
+export async function getEnrollmentsByClientId(clientId: string): Promise<CourseEnrollment[]> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('course_enrollments')
+    .where('clientId', '==', clientId)
+    .get();
+
+  return snapshot.docs.map(doc => {
+    const data = doc.data() as Record<string, unknown>;
+    return {
+      ...data,
+      id: doc.id,
+      enrolledAt: parseDate(data.enrolledAt),
+      completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons : []
+    } as CourseEnrollment;
+  }).sort((a, b) => new Date(b.enrolledAt).getTime() - new Date(a.enrolledAt).getTime());
+}
+
+export async function getEnrollmentByClientAndCourse(clientId: string, courseId: string): Promise<CourseEnrollment | null> {
+  const adminDb = getAdminDb();
+  const snapshot = await adminDb.collection('course_enrollments')
+    .where('clientId', '==', clientId)
+    .where('courseId', '==', courseId)
+    .get();
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  const doc = snapshot.docs[0];
+  const data = doc.data() as Record<string, unknown>;
+  return {
+    ...data,
+    id: doc.id,
+    enrolledAt: parseDate(data.enrolledAt),
+    completedLessons: Array.isArray(data.completedLessons) ? data.completedLessons : []
+  } as CourseEnrollment;
+}
+
+export async function updateEnrollment(enrollmentId: string, updateData: Partial<CourseEnrollment>): Promise<void> {
+  const adminDb = getAdminDb();
+  await adminDb.collection('course_enrollments').doc(enrollmentId).update(updateData);
+}
+

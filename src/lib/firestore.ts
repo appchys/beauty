@@ -943,3 +943,57 @@ export async function updateAppointmentStatus(appointmentId: string, status: App
     updatedAt: Timestamp.fromDate(new Date())
   });
 }
+
+// Direct Access Link functions
+export async function getBusinessByDirectAccessToken(token: string): Promise<Business | null> {
+  try {
+    const q = query(collection(db, 'businesses'), where('directAccessToken', '==', token));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      return null;
+    }
+
+    const businessDoc = querySnapshot.docs[0];
+    const data = businessDoc.data();
+    return {
+      ...data,
+      id: businessDoc.id,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt || Date.now()),
+      updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt || Date.now()),
+    } as Business;
+  } catch (error) {
+    console.error('Error getting business by direct access token:', error);
+    return null;
+  }
+}
+
+export async function generateBusinessDirectToken(businessId: string, forceNew = false): Promise<string> {
+  const business = await getBusinessById(businessId);
+  if (!business) {
+    throw new Error('Negocio no encontrado');
+  }
+
+  if (business.directAccessToken && !forceNew) {
+    return business.directAccessToken;
+  }
+
+  // Generar un token único y seguro
+  const token = uuidv4().replace(/-/g, '') + uuidv4().replace(/-/g, '');
+  const businessRef = doc(db, 'businesses', businessId);
+  await updateDoc(businessRef, {
+    directAccessToken: token,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
+
+  return token;
+}
+
+export async function updateBusinessAdminId(businessId: string, adminId: string): Promise<void> {
+  const businessRef = doc(db, 'businesses', businessId);
+  await updateDoc(businessRef, {
+    adminId,
+    updatedAt: Timestamp.fromDate(new Date()),
+  });
+}
+

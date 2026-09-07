@@ -14,7 +14,8 @@ import {
   Menu,
   Scissors,
   TrendingUp,
-  Wallet
+  Wallet,
+  GraduationCap
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils'; // asumiendo que tienes utils, si no, usar clsx/tailwind-merge
@@ -128,6 +129,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <NavItem href="/admin/tarjetas-fidelidad" icon={LayoutDashboard} label="Tarjetas de fidelidad" />
           <NavItem href="/admin/clients" icon={Users} label="Clientes" />
           <NavItem href="/admin/services" icon={Scissors} label="Mis Servicios" />
+          <NavItem href="/admin/courses" icon={GraduationCap} label="Cursos Online" />
           <NavItem href="/admin/expenses" icon={Wallet} label="Gastos" />
           <NavItem href="/admin/reports" icon={TrendingUp} label="Reportes" />
         </nav>

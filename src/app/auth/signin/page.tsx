@@ -3,27 +3,22 @@
 import { useState, useEffect, Suspense } from 'react';
 import { signIn, getSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Lock, Mail, Sparkles, Phone } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { User, Lock, Mail, Sparkles, Phone, Eye, EyeOff, ArrowLeft, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+
+type AuthMode = 'signin' | 'signup' | 'forgot';
 
 function SignInForm() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false);
-  const [userChecked, setUserChecked] = useState(false);
-  const [userExists, setUserExists] = useState(false);
-  const [needsPassword, setNeedsPassword] = useState(false);
-  const [isCreatingPassword, setIsCreatingPassword] = useState(false);
-  const [isResettingPassword, setIsResettingPassword] = useState(false);
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
-  // Detectar si viene del botón "Registrarse" de la página principal
-  useEffect(() => {
-    const mode = searchParams.get('mode');
-    if (mode === 'signup') {
-      setIsSignUp(true);
-    }
-  }, [searchParams]);
+  const [mode, setMode] = useState<AuthMode>('signin');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -33,158 +28,163 @@ function SignInForm() {
     slug: '',
     role: 'client' as 'admin' | 'client'
   });
-  const [error, setError] = useState('');
 
-  // Función para verificar si el usuario existe
-  const checkUserExists = async (emailOrPhone: string) => {
-    try {
-      const response = await fetch('/api/auth/check-user', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ emailOrPhone }),
-      });
-      
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error checking user:', error);
-      return { exists: false, hasPassword: false };
+  // Detectar si viene con parámetro mode=signup
+  useEffect(() => {
+    const urlMode = searchParams.get('mode');
+    if (urlMode === 'signup') {
+      setMode('signup');
     }
+  }, [searchParams]);
+
+  const handleChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    if (error) setError('');
+    if (successMessage) setSuccessMessage('');
   };
 
-  // Manejar cuando el usuario ingresa email/teléfono y presiona Enter o pierde foco
-  const handleEmailPhoneCheck = async () => {
-    if (!formData.email.trim() || isSignUp) return;
-    
-    setIsLoading(true);
-    const result = await checkUserExists(formData.email);
-    
-    setUserExists(result.exists);
-    setNeedsPassword(result.exists && !result.hasPassword);
-    setUserChecked(true);
-    setIsLoading(false);
-    
-    if (result.exists && !result.hasPassword) {
-      setIsCreatingPassword(true);
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!formData.email.trim() || isSignUp) return;
-
-    setIsLoading(true);
+  const handleModeSwitch = (newMode: AuthMode) => {
+    setMode(newMode);
     setError('');
-
-    try {
-      const result = await checkUserExists(formData.email);
-
-      setUserExists(result.exists);
-      setNeedsPassword(result.exists && !result.hasPassword);
-      setUserChecked(true);
-
-      if (!result.exists) {
-        setError('Usuario no encontrado');
-        setIsResettingPassword(false);
-        return;
-      }
-
-      setIsCreatingPassword(false);
-      setIsResettingPassword(true);
-      setFormData((prev) => ({ ...prev, password: '', confirmPassword: '' }));
-    } catch {
-      setError('Ocurrió un error inesperado');
-    } finally {
-      setIsLoading(false);
-    }
+    setSuccessMessage('');
+    setShowPassword(false);
+    setShowConfirmPassword(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     setError('');
+    setSuccessMessage('');
+    setIsLoading(true);
 
     try {
-      if (isSignUp) {
-        // Flujo de registro normal
-        const result = await signIn('credentials', {
-          email: formData.email,
-          password: formData.password,
-          name: formData.name,
-          phone: formData.phone,
-          slug: formData.slug,
-          role: formData.role,
-          action: 'signup',
-          redirect: false,
-        });
-
-        if (result?.error) {
-          setError('Error al registrarse');
-        } else {
-          const session = await getSession();
-          if (session?.user?.role === 'admin') {
-            router.push('/admin');
-          } else {
-            router.push('/client');
-          }
-        }
-      } else if (isCreatingPassword || isResettingPassword) {
-        // Flujo de creación de contraseña para usuario existente
-        if (formData.password !== formData.confirmPassword) {
-          setError('Las contraseñas no coinciden');
+      if (mode === 'signin') {
+        // --- LOGIN NORMAL ---
+        if (!formData.email.trim() || !formData.password) {
+          setError('Por favor ingresa tu email/celular y contraseña');
           setIsLoading(false);
           return;
         }
 
-        const checkResult = await checkUserExists(formData.email);
-        if (!checkResult.exists) {
-          setError('Usuario no encontrado');
-          setIsLoading(false);
-          return;
-        }
-
-        // Actualizar contraseña
-        const updateResult = await fetch('/api/auth/update-password', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            userId: checkResult.user.id, 
-            password: formData.password 
-          }),
-        });
-
-        if (updateResult.ok) {
-          // Ahora hacer login con la nueva contraseña
-          const result = await signIn('credentials', {
-            email: formData.email,
-            password: formData.password,
-            action: 'signin',
-            redirect: false,
-          });
-
-          if (result?.error) {
-            setError('Error al iniciar sesión');
-          } else {
-            const session = await getSession();
-            if (session?.user?.role === 'admin') {
-              router.push('/admin');
-            } else {
-              router.push('/client');
-            }
-          }
-        } else {
-          setError('Error al actualizar contraseña');
-        }
-      } else {
-        // Flujo de login normal
         const result = await signIn('credentials', {
-          email: formData.email,
+          email: formData.email.trim(),
           password: formData.password,
           action: 'signin',
           redirect: false,
         });
 
         if (result?.error) {
-          setError('Credenciales inválidas');
+          setError('Email, celular o contraseña incorrectos');
+        } else {
+          const session = await getSession();
+          if (session?.user?.role === 'admin') {
+            router.push('/admin');
+          } else {
+            router.push('/client');
+          }
+        }
+      } else if (mode === 'signup') {
+        // --- REGISTRO ---
+        if (!formData.name.trim()) {
+          setError('El nombre es requerido');
+          setIsLoading(false);
+          return;
+        }
+
+        if (formData.password.length < 6) {
+          setError('La contraseña debe tener al menos 6 caracteres');
+          setIsLoading(false);
+          return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          setError('Las contraseñas no coinciden');
+          setIsLoading(false);
+          return;
+        }
+
+        const result = await signIn('credentials', {
+          email: formData.email.trim(),
+          password: formData.password,
+          name: formData.name.trim(),
+          phone: formData.phone.trim(),
+          slug: formData.slug.trim(),
+          role: formData.role,
+          action: 'signup',
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setError('No se pudo completar el registro. Verifica si el email o teléfono ya están registrados.');
+        } else {
+          const session = await getSession();
+          if (session?.user?.role === 'admin') {
+            router.push('/admin');
+          } else {
+            router.push('/client');
+          }
+        }
+      } else if (mode === 'forgot') {
+        // --- RECUPERAR / RESTABLECER CONTRASEÑA ---
+        if (!formData.email.trim()) {
+          setError('Ingresa tu email o celular registrado');
+          setIsLoading(false);
+          return;
+        }
+
+        if (formData.password.length < 6) {
+          setError('La nueva contraseña debe tener al menos 6 caracteres');
+          setIsLoading(false);
+          return;
+        }
+
+        if (formData.password !== formData.confirmPassword) {
+          setError('Las contraseñas no coinciden');
+          setIsLoading(false);
+          return;
+        }
+
+        // 1. Verificar si existe
+        const checkRes = await fetch('/api/auth/check-user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ emailOrPhone: formData.email.trim() }),
+        });
+        const checkData = await checkRes.json();
+
+        if (!checkData.exists) {
+          setError('No se encontró ningún usuario con ese email o celular.');
+          setIsLoading(false);
+          return;
+        }
+
+        // 2. Actualizar contraseña
+        const updateRes = await fetch('/api/auth/update-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: checkData.user.id,
+            password: formData.password,
+          }),
+        });
+
+        if (!updateRes.ok) {
+          setError('Hubo un error al actualizar tu contraseña. Inténtalo de nuevo.');
+          setIsLoading(false);
+          return;
+        }
+
+        // 3. Iniciar sesión automáticamente
+        const result = await signIn('credentials', {
+          email: formData.email.trim(),
+          password: formData.password,
+          action: 'signin',
+          redirect: false,
+        });
+
+        if (result?.error) {
+          setSuccessMessage('Contraseña actualizada con éxito. Por favor inicia sesión.');
+          setMode('signin');
         } else {
           const session = await getSession();
           if (session?.user?.role === 'admin') {
@@ -195,281 +195,314 @@ function SignInForm() {
         }
       }
     } catch {
-      setError('Ocurrió un error inesperado');
+      setError('Ocurrió un error inesperado. Inténtalo de nuevo.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-pink-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        {/* Header */}
-        <div className="text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-pink-600 rounded-2xl flex items-center justify-center">
-              <Sparkles className="h-8 w-8 text-white" />
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-pink-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-5">
+        {/* Encabezado con Logo */}
+        <div className="text-center space-y-2">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-pink-600 rounded-2xl shadow-lg shadow-pink-200">
+            <Sparkles className="h-7 w-7 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900">BeautyPoints</h1>
-          <p className="text-gray-600 mt-2">
-            {isSignUp ? 'Crear cuenta nueva' : 'Inicia sesión en tu cuenta'}
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900">
+            BeautyPoints
+          </h1>
+          <p className="text-sm text-gray-600">
+            {mode === 'signin' && 'Inicia sesión para gestionar tus puntos o negocio'}
+            {mode === 'signup' && 'Crea tu cuenta en minutos'}
+            {mode === 'forgot' && 'Restablece tu contraseña de acceso'}
           </p>
         </div>
 
-        {/* Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-center">
-              {isSignUp ? 'Registro' : 'Iniciar Sesión'}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Email o Celular */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {isSignUp ? 'Email' : 'Email o Celular'}
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  <input
-                    type="text"
-                    required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                    placeholder={isSignUp ? "tu@email.com" : "tu@email.com o 0990815097"}
-                    value={formData.email}
-                    onChange={(e) => {
-                      setFormData({ ...formData, email: e.target.value });
-                      setUserChecked(false);
-                      setUserExists(false);
-                      setNeedsPassword(false);
-                      setIsCreatingPassword(false);
-                      setIsResettingPassword(false);
-                      setError('');
-                    }}
-                    onBlur={handleEmailPhoneCheck}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleEmailPhoneCheck();
-                      }
-                    }}
-                  />
-                </div>
-                {!isSignUp && userChecked && (
-                  <div className="mt-1">
-                    {!userExists && (
-                      <p className="text-xs text-red-500">
-                        Usuario no encontrado. ¿Deseas registrarte?
-                      </p>
-                    )}
-                    {userExists && needsPassword && (
-                      <p className="text-xs text-blue-500">
-                        Usuario encontrado, pero necesitas crear una contraseña.
-                      </p>
-                    )}
-                    {userExists && !needsPassword && (
-                      <p className="text-xs text-green-500">
-                        Usuario encontrado. Ingresa tu contraseña.
-                      </p>
-                    )}
-                  </div>
-                )}
-                {!isSignUp && !userChecked && (
-                  <p className="text-xs text-gray-500 mt-1">
-                    Puedes iniciar sesión con tu email o número de celular
-                  </p>
-                )}
-              </div>
-
-              {/* Name (solo en registro) */}
-              {isSignUp && (
+        {/* Tarjeta Principal */}
+        <Card className="shadow-xl border-gray-100 backdrop-blur-sm bg-white/95">
+          <CardHeader className="pb-4">
+            {mode === 'forgot' ? (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('signin')}
+                  className="p-1 rounded-lg text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre
+                  <CardTitle className="text-lg font-semibold text-gray-900">Restablecer Contraseña</CardTitle>
+                  <CardDescription className="text-xs text-gray-500">Ingresa tus datos para definir una nueva contraseña</CardDescription>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 p-1 bg-gray-100 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('signin')}
+                  className={`py-2 text-sm font-medium rounded-lg transition-all ${
+                    mode === 'signin'
+                      ? 'bg-white text-gray-900 shadow-sm font-semibold'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Iniciar Sesión
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('signup')}
+                  className={`py-2 text-sm font-medium rounded-lg transition-all ${
+                    mode === 'signup'
+                      ? 'bg-white text-gray-900 shadow-sm font-semibold'
+                      : 'text-gray-500 hover:text-gray-900'
+                  }`}
+                >
+                  Registrarse
+                </button>
+              </div>
+            )}
+          </CardHeader>
+
+          <CardContent>
+            {/* Mensajes de feedback */}
+            {error && (
+              <div className="mb-4 flex items-center gap-2 p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 shrink-0 text-red-500" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mb-4 flex items-center gap-2 p-3 text-sm text-green-700 bg-green-50 border border-green-200 rounded-lg">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-500" />
+                <span>{successMessage}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Campo Nombre (solo en registro) */}
+              {mode === 'signup' && (
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Nombre Completo
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="text"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      placeholder="Tu nombre"
+                      placeholder="Ej. María Pérez"
+                      className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                       value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      onChange={(e) => handleChange('name', e.target.value)}
                     />
                   </div>
                 </div>
               )}
 
-              {/* Phone (solo en registro) */}
-              {isSignUp && (
+              {/* Campo Email o Celular (en login y forgot) / Solo Email (en signup) */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                  {mode === 'signup' ? 'Correo Electrónico' : 'Email o Celular'}
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type={mode === 'signup' ? 'email' : 'text'}
+                    required
+                    placeholder={mode === 'signup' ? 'tu@email.com' : 'tu@email.com o 0990815097'}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                    value={formData.email}
+                    onChange={(e) => handleChange('email', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {/* Campo Celular (en registro) */}
+              {mode === 'signup' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Celular
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Número de Celular
                   </label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
                       type="tel"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       placeholder="0990815097"
+                      className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                       value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      onChange={(e) => handleChange('phone', e.target.value)}
                     />
                   </div>
                 </div>
               )}
 
-              {/* Username/Slug (solo en registro para admin) */}
-              {isSignUp && formData.role === 'admin' && (
+              {/* Tipo de cuenta (solo en registro) */}
+              {mode === 'signup' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Nombre de usuario (ej: titaravelo)
-                  </label>
-                  <div className="relative">
-                    <Sparkles className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <input
-                      type="text"
-                      required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      placeholder="titaravelo"
-                      value={formData.slug}
-                      onChange={(e) => {
-                        const value = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-                        setFormData({ ...formData, slug: value });
-                      }}
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Este será tu enlace: beauty.com/{formData.slug || 'usuario'}
-                  </p>
-                </div>
-              )}
-
-              {/* Role (solo en registro) */}
-              {isSignUp && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de cuenta
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Tipo de Cuenta
                   </label>
                   <select
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
+                    className="w-full px-3.5 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all text-gray-800"
                     value={formData.role}
-                    onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'client' })}
+                    onChange={(e) => handleChange('role', e.target.value)}
                   >
-                    <option value="client">Cliente</option>
-                    <option value="admin">Administrador</option>
+                    <option value="client">Cliente (Acumular puntos y agendar)</option>
+                    <option value="admin">Administrador (Gestionar negocio y clientes)</option>
                   </select>
                 </div>
               )}
 
-              {/* Password - Solo mostrar si el usuario existe y tiene contraseña, o si está registrándose, o si está creando contraseña */}
-              {(isSignUp || (userExists && !needsPassword) || isCreatingPassword || isResettingPassword) && (
+              {/* Slug/Usuario para negocio (solo si es admin en registro) */}
+              {mode === 'signup' && formData.role === 'admin' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {isCreatingPassword ? 'Crear Contraseña' : isResettingPassword ? 'Nueva Contraseña' : 'Contraseña'}
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
+                    Enlace de tu negocio
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Sparkles className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
-                      type="password"
+                      type="text"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-                      placeholder="••••••••"
-                      value={formData.password}
-                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                      placeholder="tunegocio"
+                      className="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                      value={formData.slug}
+                      onChange={(e) => {
+                        const clean = e.target.value.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+                        handleChange('slug', clean);
+                      }}
                     />
                   </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Tu enlace público será: <span className="font-medium text-pink-600">beauty.com/{formData.slug || 'tunegocio'}</span>
+                  </p>
                 </div>
               )}
 
-              {/* Confirm Password - Solo para creación de contraseña */}
-              {(isCreatingPassword || isResettingPassword) && (
+              {/* Campo Contraseña - SIEMPRE VISIBLE */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    {mode === 'forgot' ? 'Nueva Contraseña' : 'Contraseña'}
+                  </label>
+                  {mode === 'signin' && (
+                    <button
+                      type="button"
+                      onClick={() => handleModeSwitch('forgot')}
+                      className="text-xs text-pink-600 hover:text-pink-700 font-medium transition-colors"
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    placeholder="••••••••"
+                    className="w-full pl-10 pr-10 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
+                    value={formData.password}
+                    onChange={(e) => handleChange('password', e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Confirmar Contraseña (en registro y en forgot) */}
+              {(mode === 'signup' || mode === 'forgot') && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">
                     Confirmar Contraseña
                   </label>
                   <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <input
-                      type="password"
+                      type={showConfirmPassword ? 'text' : 'password'}
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent"
                       placeholder="••••••••"
+                      className="w-full pl-10 pr-10 py-2.5 text-sm bg-gray-50/50 border border-gray-200 rounded-lg focus:bg-white focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent transition-all"
                       value={formData.confirmPassword}
-                      onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      onChange={(e) => handleChange('confirmPassword', e.target.value)}
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-0.5"
+                      tabIndex={-1}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
                   </div>
                 </div>
               )}
 
-              {/* Forgot password */}
-              {!isSignUp && !!formData.email.trim() && !isCreatingPassword && !isResettingPassword && (
-                <div className="text-right">
-                  <button
-                    type="button"
-                    onClick={handleForgotPassword}
-                    className="text-sm text-pink-600 hover:text-pink-700 font-medium"
-                    disabled={isLoading}
-                  >
-                    Olvidé mi contraseña
-                  </button>
-                </div>
-              )}
-
-              {/* Error */}
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <p className="text-red-600 text-sm">{error}</p>
-                </div>
-              )}
-
-              {/* Submit Button */}
+              {/* Botón Principal */}
               <button
                 type="submit"
-                disabled={isLoading || (!isSignUp && !userChecked && formData.email.trim() !== '')}
-                className="w-full bg-pink-600 text-white py-2 px-4 rounded-lg hover:bg-pink-700 transition-colors disabled:bg-pink-300 disabled:text-pink-800 disabled:cursor-not-allowed"
+                disabled={isLoading}
+                className="w-full mt-2 bg-pink-600 hover:bg-pink-700 text-white font-medium py-2.5 px-4 rounded-lg shadow-sm hover:shadow transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
               >
-                {isLoading ? 'Procesando...' : 
-                  isSignUp ? 'Crear Cuenta' : 
-                  isCreatingPassword ? 'Crear Contraseña' :
-                  isResettingPassword ? 'Restablecer Contraseña' : 
-                  'Iniciar Sesión'}
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <span>
+                  {isLoading
+                    ? 'Procesando...'
+                    : mode === 'signin'
+                    ? 'Iniciar Sesión'
+                    : mode === 'signup'
+                    ? 'Crear Cuenta'
+                    : 'Actualizar Contraseña'}
+                </span>
               </button>
             </form>
 
-            {/* Toggle */}
-            <div className="mt-4 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setError('');
-                  setUserChecked(false);
-                  setUserExists(false);
-                  setNeedsPassword(false);
-                  setIsCreatingPassword(false);
-                  setIsResettingPassword(false);
-                  setFormData({
-                    email: '',
-                    password: '',
-                    confirmPassword: '',
-                    name: '',
-                    phone: '',
-                    slug: '',
-                    role: 'client'
-                  });
-                }}
-                className="text-pink-600 hover:text-pink-700 text-sm font-medium"
-              >
-                {isSignUp 
-                  ? '¿Ya tienes cuenta? Inicia sesión' 
-                  : '¿No tienes cuenta? Regístrate'
-                }
-              </button>
+            {/* Enlace alternativo en el pie del Card */}
+            <div className="mt-5 text-center text-xs text-gray-500 border-t border-gray-100 pt-4">
+              {mode === 'signin' && (
+                <p>
+                  ¿No tienes una cuenta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => handleModeSwitch('signup')}
+                    className="text-pink-600 hover:text-pink-700 font-semibold cursor-pointer"
+                  >
+                    Regístrate gratis
+                  </button>
+                </p>
+              )}
+
+              {mode === 'signup' && (
+                <p>
+                  ¿Ya tienes una cuenta?{' '}
+                  <button
+                    type="button"
+                    onClick={() => handleModeSwitch('signin')}
+                    className="text-pink-600 hover:text-pink-700 font-semibold cursor-pointer"
+                  >
+                    Inicia sesión
+                  </button>
+                </p>
+              )}
+
+              {mode === 'forgot' && (
+                <button
+                  type="button"
+                  onClick={() => handleModeSwitch('signin')}
+                  className="text-pink-600 hover:text-pink-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                >
+                  <ArrowLeft className="h-3.5 w-3.5" /> Volver a Iniciar Sesión
+                </button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -480,11 +513,13 @@ function SignInForm() {
 
 export default function SignIn() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-pink-50 to-blue-50">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-pink-600"></div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-pink-50 via-pink-50 to-blue-50">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600"></div>
+        </div>
+      }
+    >
       <SignInForm />
     </Suspense>
   );
